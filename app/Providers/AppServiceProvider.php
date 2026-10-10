@@ -21,7 +21,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        View::composer(['welcome', 'admin.*', 'consultations.*'], function ($view): void {
+        View::composer(['welcome', 'admin.*', 'student.*', 'teacher.*', 'layouts.*', 'auth.*'], function ($view): void {
             $view->with('siteSettings', SiteSetting::current());
         });
     }

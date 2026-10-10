@@ -41,7 +41,7 @@ class ConsultationController extends Controller
     {
         $user = request()->user();
         if ($user->isTeacher()) return redirect()->route('consultations.teacher');
-        if ($user->isStudent()) return redirect()->route('consultations.browse');
+        if ($user->isStudent()) return redirect()->route('consultations.dashboard');
         return redirect()->route('admin.dashboard');
     }
 
@@ -58,7 +58,7 @@ class ConsultationController extends Controller
             return $period->appointments->whereNotIn('status', ['cancelled', 'rejected'])->map(fn ($appointment) => $appointment->starts_at->format('Y-m-d H:i'));
         })->all();
 
-        return view('consultations.browse', compact('teachers', 'selectedTeacher', 'availability', 'bookedSlots'));
+        return view('student.browse', compact('teachers', 'selectedTeacher', 'availability', 'bookedSlots'));
     }
 
     public function book(Request $request, ConsultationAvailability $availability): RedirectResponse
@@ -99,7 +99,7 @@ class ConsultationController extends Controller
         $user = request()->user();
         $availability = ConsultationAvailability::query()->where('teacher_id', $user->id)->whereDate('date', '>=', today())->with('appointments')->orderBy('date')->orderBy('starts_at')->get();
         $appointments = ConsultationAppointment::query()->where('teacher_id', $user->id)->with(['student', 'availability'])->whereNotIn('status', ['cancelled', 'rejected'])->orderBy('starts_at')->get();
-        return view('consultations.teacher', compact('availability', 'appointments'));
+        return view('teacher.calendar', compact('availability', 'appointments'));
     }
 
     public function availability(Request $request): RedirectResponse

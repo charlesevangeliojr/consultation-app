@@ -49,7 +49,8 @@
                 <a class="focus-rose text-sm text-slate-300 transition hover:text-white" href="#how-it-works">How it works</a>
                 <a class="focus-rose text-sm text-slate-300 transition hover:text-white" href="#calendar">Faculty calendar</a>
                 <a class="focus-rose text-sm text-slate-300 transition hover:text-white" href="#about">About</a>
-                <a href="{{ route('portal.login') }}" class="focus-rose rounded-lg bg-rose-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-400">Log in</a>
+                <a href="{{ route('register') }}" class="focus-rose rounded-lg bg-rose-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-400">Register</a>
+                <a href="{{ route('portal.login') }}" class="focus-rose rounded-lg border border-slate-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">Log in</a>
             </div>
 
             <button type="button" id="mobile-menu-button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open navigation menu" class="focus-rose grid h-10 w-10 place-items-center rounded-lg border border-slate-700 text-slate-200 hover:bg-slate-800 lg:hidden">
@@ -64,6 +65,7 @@
                 <a class="rounded-lg px-3 py-2.5 text-sm text-slate-300 hover:bg-slate-900 hover:text-white" href="#how-it-works">How it works</a>
                 <a class="rounded-lg px-3 py-2.5 text-sm text-slate-300 hover:bg-slate-900 hover:text-white" href="#calendar">Faculty calendar</a>
                 <a class="rounded-lg px-3 py-2.5 text-sm text-slate-300 hover:bg-slate-900 hover:text-white" href="#about">About</a>
+                <a class="rounded-lg px-3 py-2.5 text-sm font-semibold text-rose-300 hover:bg-slate-900 hover:text-rose-200" href="{{ route('register') }}">Register</a>
                 <a class="mt-2 rounded-lg bg-rose-500 px-3 py-3 text-center text-sm font-semibold text-white hover:bg-rose-400" href="{{ route('portal.login') }}">Log in</a>
             </div>
         </div>
@@ -81,7 +83,7 @@
                     <p class="mt-6 max-w-xl text-base leading-7 text-slate-400 sm:text-lg sm:leading-8">Book consultations, connect with faculty, manage schedules, and stay updated with one centralized academic calendar.</p>
                     <div class="mt-8 flex flex-col gap-3 sm:flex-row">
                         <a href="{{ route('portal.login') }}" class="focus-rose inline-flex items-center justify-center gap-2 rounded-xl bg-rose-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-rose-950/30 transition hover:-translate-y-0.5 hover:bg-rose-400">Book a consultation <span aria-hidden="true">→</span></a>
-                        <a href="#features" class="focus-rose inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900/60 px-6 py-3.5 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-900">Explore features</a>
+                        <a href="{{ route('register') }}" class="focus-rose inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900/60 px-6 py-3.5 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-900">Register</a>
                     </div>
                     <div class="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs text-slate-500">
                         <span class="inline-flex items-center gap-2"><svg class="h-4 w-4 text-rose-300" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 0 1 .006 1.414l-7.2 7.25a1 1 0 0 1-1.42 0L3.29 9.155A1 1 0 0 1 4.71 7.74l4.09 4.1 6.49-6.54a1 1 0 0 1 1.414-.01Z" clip-rule="evenodd"/></svg> One shared schedule</span>

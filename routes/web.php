@@ -2,11 +2,14 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AdminLoginController;
+use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Admin\SiteSettingsController;
 use App\Http\Controllers\Admin\AdminAccountsController;
 use App\Http\Controllers\Admin\AdminRolesController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\ConsultationController;
+use App\Http\Controllers\StudentProfileController;
+use App\Http\Controllers\StudentDashboardController;
 use App\Models\ConsultationAvailability;
 use App\Models\User;
 
@@ -35,9 +38,16 @@ Route::post('/admin/login', [AdminLoginController::class, 'store'])->middleware(
 
 Route::get('/portal/login', [ConsultationController::class, 'login'])->name('portal.login');
 Route::post('/portal/login', [ConsultationController::class, 'authenticate'])->middleware('throttle:5,1')->name('portal.login.store');
+Route::middleware('guest')->group(function () {
+    Route::get('/register', [RegistrationController::class, 'create'])->name('register');
+    Route::post('/register', [RegistrationController::class, 'store'])->middleware('throttle:5,1')->name('register.store');
+});
 Route::middleware('auth')->prefix('consultations')->name('consultations.')->group(function () {
     Route::get('/', [ConsultationController::class, 'home'])->name('home');
+    Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('dashboard');
     Route::get('/browse', [ConsultationController::class, 'browse'])->name('browse');
+    Route::get('/student/profile', [StudentProfileController::class, 'edit'])->name('student-profile.edit');
+    Route::put('/student/profile', [StudentProfileController::class, 'update'])->name('student-profile.update');
     Route::post('/availability/{availability}/book', [ConsultationController::class, 'book'])->name('book');
     Route::get('/teacher', [ConsultationController::class, 'teacher'])->name('teacher');
     Route::post('/teacher/availability', [ConsultationController::class, 'availability'])->name('availability.store');

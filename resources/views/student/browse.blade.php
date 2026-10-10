@@ -1,4 +1,4 @@
-@extends('consultations.layout')
+@extends('layouts.consultations')
 @section('title', 'Book a consultation')
 @section('content')
 <p class="text-xs font-semibold uppercase tracking-[.25em] text-rose-300">Student portal</p><h1 class="mt-3 text-3xl font-bold">Find a consultation time</h1><p class="mt-2 text-slate-400">Choose a teacher to see their published availability, then request an open slot.</p>

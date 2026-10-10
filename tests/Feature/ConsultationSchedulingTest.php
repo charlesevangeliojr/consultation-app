@@ -48,6 +48,9 @@ class ConsultationSchedulingTest extends TestCase
         $this->assertSame($teacher->id, $appointment->teacher_id);
         $this->assertSame($student->id, $appointment->student_id);
 
+        $this->actingAs($student)->get(route('consultations.dashboard'))
+            ->assertOk()->assertSee('Dashboard')->assertSee($teacher->name)->assertSee('Course planning');
+
         $this->actingAs($teacher)->get(route('consultations.teacher'))
             ->assertOk()->assertSee($student->name)->assertSee('Course planning');
     }

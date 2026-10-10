@@ -1,4 +1,4 @@
-@extends('consultations.layout')
+@extends('layouts.consultations')
 @section('title', 'Teacher calendar')
 @section('content')
 <p class="text-xs font-semibold uppercase tracking-[.25em] text-rose-300">Teacher portal</p><h1 class="mt-3 text-3xl font-bold">Consultation calendar</h1><p class="mt-2 text-slate-400">Publish times students can request. New requests appear below in time order.</p>

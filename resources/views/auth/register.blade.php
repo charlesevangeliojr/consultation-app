@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Create account · {{ $siteSettings->name ?: 'ConSync' }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="grid min-h-screen place-items-center bg-slate-950 px-5 py-10 text-slate-100">
+    <main class="w-full max-w-xl rounded-2xl border border-slate-800 bg-slate-900 p-7 shadow-2xl sm:p-9">
+        <a href="{{ route('register') }}" class="text-sm text-slate-400 hover:text-white">← Change account type</a>
+        <p class="mt-6 text-sm font-semibold uppercase tracking-[.2em] text-rose-400">{{ ucfirst($selectedRole) }} registration</p>
+        <h1 class="mt-2 text-3xl font-bold">Create your account</h1>
+
+        @php
+            $initialStep = $errors->hasAny(['contact_number', 'birthday', 'gender', 'house_number', 'region', 'province', 'city', 'barangay', 'postal_code', 'lrn']) ? 2 : (($errors->hasAny(['password', 'password_confirmation']) ? ($selectedRole === 'student' ? 3 : 2) : 1));
+            $credentialStep = $selectedRole === 'student' ? 3 : 2;
+            $stepCount = $selectedRole === 'student' ? 3 : 2;
+            $secondStepFields = $selectedRole === 'student' ? ['contact_number', 'birthday', 'gender', 'lrn'] : ['password', 'password_confirmation'];
+        @endphp
+
+        <div id="registration-form" data-initial-step="{{ $initialStep }}" data-step-count="{{ $stepCount }}">
+            <div class="mt-6 flex items-center gap-2" aria-label="Registration progress">
+                @for ($step = 1; $step <= $stepCount; $step++)
+                    <span data-progress-step="{{ $step }}" class="h-1.5 flex-1 rounded-full bg-slate-700"></span>
+                @endfor
+            </div>
+            <p id="step-label" class="mt-2 text-xs text-slate-500"></p>
+
+            <form id="register-form" method="POST" action="{{ route('register.store') }}" class="mt-6">
+                @csrf
+                <input type="hidden" name="role" value="{{ $selectedRole }}">
+
+                <section data-form-step="1" class="space-y-5">
+                    <h2 class="text-lg font-semibold">Account information</h2>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <label for="first_name" class="mb-2 block text-sm font-medium">First name</label>
+                            <input id="first_name" name="first_name" type="text" maxlength="100" autocomplete="given-name" value="{{ old('first_name') }}" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-rose-400">
+                            @error('first_name') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label for="middle_name" class="mb-2 block text-sm font-medium">Middle name <span class="text-slate-500">(optional)</span></label>
+                            <input id="middle_name" name="middle_name" type="text" maxlength="100" autocomplete="additional-name" value="{{ old('middle_name') }}" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-rose-400">
+                            @error('middle_name') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label for="last_name" class="mb-2 block text-sm font-medium">Last name</label>
+                            <input id="last_name" name="last_name" type="text" maxlength="100" autocomplete="family-name" value="{{ old('last_name') }}" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-rose-400">
+                            @error('last_name') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label for="suffix" class="mb-2 block text-sm font-medium">Suffix <span class="text-slate-500">(optional)</span></label>
+                            <input id="suffix" name="suffix" type="text" maxlength="30" placeholder="Jr., III" value="{{ old('suffix') }}" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-rose-400">
+                            @error('suffix') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+                    <div>
+                        <label for="email" class="mb-2 block text-sm font-medium">Email</label>
+                        <input id="email" name="email" type="email" maxlength="255" autocomplete="email" value="{{ old('email') }}" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-rose-400">
+                        @error('email') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
+                    </div>
+                    <button type="button" data-next class="w-full rounded-lg bg-rose-500 px-5 py-3 font-semibold transition hover:bg-rose-400">Continue</button>
+                </section>
+
+                @if ($selectedRole === 'student')
+                    <section data-form-step="2" class="hidden space-y-5">
+                        <h2 class="text-lg font-semibold">Student details</h2>
+                        <div>
+                            <label for="contact_number" class="mb-2 block text-sm font-medium">Contact number <span class="text-rose-400" aria-label="required">*</span></label>
+                            <div class="flex overflow-hidden rounded-lg border border-slate-700 bg-slate-950 focus-within:border-rose-400">
+                                <span class="grid place-items-center border-r border-slate-700 px-4 text-slate-300">+63</span>
+                                <input id="contact_number" name="contact_number" type="tel" inputmode="numeric" maxlength="10" pattern="9[0-9]{9}" title="Enter 10 digits starting with 9" placeholder="9XXXXXXXXX" autocomplete="tel-national" value="{{ old('contact_number') }}" class="min-w-0 flex-1 bg-transparent px-4 py-3 outline-none">
+                            </div>
+                            <p class="mt-1 text-xs text-slate-500">Enter a Philippine mobile number starting with 9 (10 digits after +63).</p>
+                            @if ($errors->has('contact_number') && old('contact_number'))
+                                <p class="mt-2 text-sm text-rose-300">{{ $errors->first('contact_number') }}</p>
+                            @endif
+                        </div>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label for="birthday" class="mb-2 block text-sm font-medium">Date of birth</label>
+                                <input id="birthday" name="birthday" type="date" max="{{ today()->subDay()->toDateString() }}" value="{{ old('birthday') }}" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-rose-400">
+                                <p class="mt-1 text-xs text-slate-500">Choose a date in the past.</p>
+                                @error('birthday') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label for="gender" class="mb-2 block text-sm font-medium">Sex</label>
+                                <select id="gender" name="gender" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-rose-400">
+                                    <option value="">Select sex</option>
+                                    @foreach (['Male', 'Female'] as $sex)
+                                        <option value="{{ $sex }}" @selected(old('gender') === $sex)>{{ $sex }}</option>
+                                    @endforeach
+                                </select>
+                                @error('gender') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+                        <div>
+                            <label for="lrn" class="mb-2 block text-sm font-medium">LRN <span class="text-slate-500">(12 digits)</span></label>
+                            <input id="lrn" name="lrn" type="text" inputmode="numeric" maxlength="12" pattern="[0-9]{12}" placeholder="12-digit learner reference number" value="{{ old('lrn') }}" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-rose-400">
+                            <p class="mt-1 text-xs text-slate-500">Enter exactly 12 digits.</p>
+                            @error('lrn') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
+                        </div>
+                        <fieldset class="space-y-3">
+                            <legend class="text-sm font-medium">Address</legend>
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <div>
+                                    <label for="region" class="sr-only">Region</label>
+                                    <input id="region" name="region" list="region-options" data-location-input autocomplete="off" placeholder="Type or select region" value="{{ old('region') }}" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none placeholder:text-slate-500 focus:border-rose-400">
+                                    <datalist id="region-options"></datalist>
+                                    @error('region') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
+                                </div>
+                                <div>
+                                    <label for="province" class="sr-only">Province</label>
+                                    <input id="province" name="province" list="province-options" data-location-input disabled autocomplete="off" placeholder="Type or select province" value="{{ old('province') }}" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none placeholder:text-slate-500 focus:border-rose-400 disabled:opacity-50">
+                                    <datalist id="province-options"></datalist>
+                                    @error('province') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
+                                </div>
+                                <div>
+                                    <label for="city" class="sr-only">City or municipality</label>
+                                    <input id="city" name="city" list="city-options" data-location-input disabled autocomplete="off" placeholder="Type or select city/municipality" value="{{ old('city') }}" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none placeholder:text-slate-500 focus:border-rose-400 disabled:opacity-50">
+                                    <datalist id="city-options"></datalist>
+                                    @error('city') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
+                                </div>
+                                <div>
+                                    <label for="barangay" class="sr-only">Barangay</label>
+                                    <input id="barangay" name="barangay" list="barangay-options" data-location-input disabled autocomplete="off" placeholder="Type or select barangay" value="{{ old('barangay') }}" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none placeholder:text-slate-500 focus:border-rose-400 disabled:opacity-50">
+                                    <datalist id="barangay-options"></datalist>
+                                    @error('barangay') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
+                                </div>
+                                <div>
+                                    <label for="house_number" class="sr-only">House / unit no.</label>
+                                    <input id="house_number" name="house_number" type="text" maxlength="100" placeholder="House / unit no. (optional)" value="{{ old('house_number') }}" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none placeholder:text-slate-500 focus:border-rose-400">
+                                    @error('house_number') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
+                                </div>
+                                <div>
+                                    <label for="postal_code" class="sr-only">Postal code</label>
+                                    <input id="postal_code" name="postal_code" type="text" inputmode="numeric" maxlength="20" placeholder="Postal code (optional)" value="{{ old('postal_code') }}" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none placeholder:text-slate-500 focus:border-rose-400">
+                                    @error('postal_code') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
+                                </div>
+                            </div>
+                            <p id="location-help" class="text-xs text-slate-500">Choose a region, then select the province, city/municipality, and barangay.</p>
+                        </fieldset>
+                        <div class="flex gap-3">
+                            <button type="button" data-previous class="w-1/3 rounded-lg border border-slate-700 px-4 py-3 font-semibold hover:bg-slate-800">Back</button>
+                            <button type="button" data-next class="flex-1 rounded-lg bg-rose-500 px-5 py-3 font-semibold transition hover:bg-rose-400">Continue</button>
+                        </div>
+                    </section>
+                @endif
+
+                <section data-form-step="{{ $credentialStep }}" class="hidden space-y-5">
+                    <h2 class="text-lg font-semibold">Create a password</h2>
+                    <div>
+                        <label for="password" class="mb-2 block text-sm font-medium">Password</label>
+                        <div class="flex overflow-hidden rounded-lg border border-slate-700 bg-slate-950 focus-within:border-rose-400">
+                            <input id="password" name="password" type="password" autocomplete="new-password" class="min-w-0 flex-1 bg-transparent px-4 py-3 outline-none">
+                            <button type="button" data-toggle-password="password" aria-label="Show password" class="px-4 text-sm text-rose-300 hover:text-white">Show</button>
+                        </div>
+                        <p class="mt-2 text-xs leading-5 text-slate-400">Password must be at least 8 characters.</p>
+                        @error('password') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label for="password_confirmation" class="mb-2 block text-sm font-medium">Confirm password</label>
+                        <div class="flex overflow-hidden rounded-lg border border-slate-700 bg-slate-950 focus-within:border-rose-400">
+                            <input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" class="min-w-0 flex-1 bg-transparent px-4 py-3 outline-none">
+                            <button type="button" data-toggle-password="password_confirmation" aria-label="Show confirmation password" class="px-4 text-sm text-rose-300 hover:text-white">Show</button>
+                        </div>
+                    </div>
+                    <div class="flex gap-3">
+                        <button type="button" data-previous class="w-1/3 rounded-lg border border-slate-700 px-4 py-3 font-semibold hover:bg-slate-800">Back</button>
+                        <button type="submit" class="flex-1 rounded-lg bg-rose-500 px-5 py-3 font-semibold transition hover:bg-rose-400">Create account</button>
+                    </div>
+                </section>
+            </form>
+        </div>
+        <p class="mt-6 text-center text-sm text-slate-400">Already registered? <a href="{{ route('portal.login') }}" class="font-medium text-rose-300 hover:text-rose-200">Log in</a></p>
+    </main>
+    <script>
+        (() => {
+            const wrapper = document.getElementById('registration-form');
+            const form = document.getElementById('register-form');
+            const count = Number(wrapper.dataset.stepCount);
+            let current = Number(wrapper.dataset.initialStep);
+            const sections = [...form.querySelectorAll('[data-form-step]')];
+            const stepFields = {
+                1: ['first_name', 'last_name', 'email'],
+                2: @json($secondStepFields),
+                3: ['password', 'password_confirmation'],
+            };
+            const oldLocation = {
+                region: @json(old('region')),
+                province: @json(old('province')),
+                city: @json(old('city')),
+                barangay: @json(old('barangay')),
+            };
+            const regionInput = document.getElementById('region');
+            const provinceInput = document.getElementById('province');
+            const cityInput = document.getElementById('city');
+            const barangayInput = document.getElementById('barangay');
+            const locationHelp = document.getElementById('location-help');
+            const psgcApi = 'https://psgc.gitlab.io/api';
+            const locationLists = {
+                region: { input: regionInput, list: document.getElementById('region-options'), places: [] },
+                province: { input: provinceInput, list: document.getElementById('province-options'), places: [] },
+                city: { input: cityInput, list: document.getElementById('city-options'), places: [] },
+                barangay: { input: barangayInput, list: document.getElementById('barangay-options'), places: [] },
+            };
+            function resetLocation(key, disabled = true) {
+                const item = locationLists[key];
+                item.list.replaceChildren();
+                item.places = [];
+                item.input.disabled = disabled;
+            }
+            function placeFor(key, name) {
+                return locationLists[key].places.find(place => place.name.toLocaleLowerCase() === (name || '').trim().toLocaleLowerCase());
+            }
+            function fillLocations(key, places, selected = '') {
+                const item = locationLists[key];
+                item.places = [...places].sort((a, b) => a.name.localeCompare(b.name));
+                item.list.replaceChildren(...item.places.map(place => new Option(place.name)));
+                item.input.disabled = false;
+                if (selected) item.input.value = selected;
+            }
+            async function getPlaces(path) {
+                const response = await fetch(`${psgcApi}/${path}`);
+                if (!response.ok) throw new Error('Unable to load locations. Please try again.');
+                return response.json();
+            }
+            async function loadRegions(selected = '') {
+                try {
+                    const places = await getPlaces('regions/');
+                    fillLocations('region', places, selected);
+                    if (regionInput.value) await loadProvinces(regionInput.value, oldLocation.province);
+                } catch (error) {
+                    resetLocation('region', false);
+                    locationHelp.textContent = 'Philippine location options could not load. Refresh the page to try again.';
+                }
+            }
+            async function loadProvinces(regionName, selected = '') {
+                resetLocation('province', !regionName);
+                resetLocation('city');
+                resetLocation('barangay');
+                const region = placeFor('region', regionName);
+                if (!region) {
+                    provinceInput.value = selected;
+                    provinceInput.disabled = !regionName;
+                    return;
+                }
+                try {
+                    const places = await getPlaces(`provinces/?regionCode=${encodeURIComponent(region.code)}`);
+                    fillLocations('province', places, selected);
+                    if (placeFor('province', provinceInput.value)) await loadCities(provinceInput.value, oldLocation.city);
+                    else if (places.length === 0) await loadCities('', oldLocation.city);
+                } catch (error) {
+                    resetLocation('province', false);
+                    locationHelp.textContent = error.message;
+                }
+            }
+            async function loadCities(provinceName, selected = '') {
+                resetLocation('city', !provinceName && !regionInput.value);
+                resetLocation('barangay');
+                const province = placeFor('province', provinceName);
+                const region = placeFor('region', regionInput.value);
+                const filter = province ? `provinceCode=${encodeURIComponent(province.code)}` : (region ? `regionCode=${encodeURIComponent(region.code)}` : null);
+                if (!filter) return;
+                try {
+                    const places = await getPlaces(`cities-municipalities/?${filter}`);
+                    fillLocations('city', places, selected);
+                    if (placeFor('city', cityInput.value)) await loadBarangays(cityInput.value, oldLocation.barangay);
+                } catch (error) {
+                    resetLocation('city', false);
+                    locationHelp.textContent = error.message;
+                }
+            }
+            async function loadBarangays(cityName, selected = '') {
+                resetLocation('barangay', !cityName);
+                const city = placeFor('city', cityName);
+                if (!city) {
+                    barangayInput.value = selected;
+                    return;
+                }
+                const locationType = city.isCity ? 'cityCode' : 'municipalityCode';
+                try {
+                    const places = await getPlaces(`barangays/?${locationType}=${encodeURIComponent(city.code)}`);
+                    fillLocations('barangay', places, selected);
+                } catch (error) {
+                    resetLocation('barangay', false);
+                    locationHelp.textContent = error.message;
+                }
+            }
+            function render() {
+                sections.forEach(section => {
+                    const active = Number(section.dataset.formStep) === current;
+                    section.classList.toggle('hidden', !active);
+                    section.querySelectorAll('input, select, textarea').forEach(field => {
+                        field.required = active && (stepFields[current] || []).includes(field.name);
+                    });
+                });
+                document.querySelectorAll('[data-progress-step]').forEach(item => {
+                    const active = Number(item.dataset.progressStep) <= current;
+                    item.classList.toggle('bg-rose-400', active);
+                    item.classList.toggle('bg-slate-700', !active);
+                });
+                document.getElementById('step-label').textContent = `Step ${current} of ${count}`;
+            }
+            form.querySelectorAll('[data-next]').forEach(button => button.addEventListener('click', () => {
+                const activeSection = sections.find(section => Number(section.dataset.formStep) === current);
+                const requiredFields = (stepFields[current] || []).map(name => activeSection.querySelector(`[name="${name}"]`)).filter(Boolean);
+                const invalidField = requiredFields.find(field => !field.reportValidity());
+                if (!invalidField && current < count) { current++; render(); }
+            }));
+            form.querySelectorAll('[data-previous]').forEach(button => button.addEventListener('click', () => {
+                if (current > 1) { current--; render(); }
+            }));
+            regionInput?.addEventListener('change', () => loadProvinces(regionInput.value));
+            provinceInput?.addEventListener('change', () => loadCities(provinceInput.value));
+            cityInput?.addEventListener('change', () => loadBarangays(cityInput.value));
+            form.querySelectorAll('[data-toggle-password]').forEach(button => button.addEventListener('click', () => {
+                const input = document.getElementById(button.dataset.togglePassword);
+                const show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                button.textContent = show ? 'Hide' : 'Show';
+                button.setAttribute('aria-label', `${show ? 'Hide' : 'Show'} ${input.id === 'password' ? 'password' : 'confirmation password'}`);
+            }));
+            render();
+            loadRegions(oldLocation.region);
+        })();
+    </script>
+</body>
+</html>
