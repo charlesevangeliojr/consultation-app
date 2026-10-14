@@ -26,6 +26,12 @@
                 <span>{{ $siteSettings->name }} <span class="text-rose-400">Admin</span></span>
             </a>
             <nav aria-label="Admin navigation" class="flex gap-2 overflow-x-auto p-4 md:flex-1 md:flex-col">
+                @if (auth()->user()->canAccess('settings', 'view'))
+                    <a href="{{ route('admin.school') }}" class="shrink-0 rounded-lg px-4 py-3 text-sm {{ request()->routeIs('admin.school*') ? 'bg-rose-500/10 text-rose-300' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">School lists</a>
+                @endif
+                @if (auth()->user()->canAccess('dashboard', 'view'))
+                    <a href="{{ route('admin.consultations') }}" class="shrink-0 rounded-lg px-4 py-3 text-sm {{ request()->routeIs('admin.consultations') ? 'bg-rose-500/10 text-rose-300' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">Consultation monitoring</a>
+                @endif
                 @if (auth()->user()->canAccess('dashboard', 'view'))
                 <a href="{{ route('admin.dashboard') }}" @class([
                     'flex shrink-0 items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition',

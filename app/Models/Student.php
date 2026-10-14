@@ -16,6 +16,8 @@ class Student extends Model
         'status',
         'lrn',
         'profile_photo_path',
+        'grade_level_id',
+        'section_id',
     ];
 
     protected function casts(): array
@@ -26,5 +28,15 @@ class Student extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function gradeLevel(): BelongsTo
+    {
+        return $this->belongsTo(GradeLevel::class);
+    }
+
+    public function section(): BelongsTo
+    {
+        return $this->belongsTo(Section::class);
     }
 }

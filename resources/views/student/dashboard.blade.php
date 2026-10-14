@@ -72,6 +72,9 @@
                         @if ($appointment->topic)
                             <p class="mt-3 border-t border-slate-800 pt-3 text-xs text-slate-400">{{ $appointment->topic }}</p>
                         @endif
+                        @if(in_array($appointment->status, ['pending', 'confirmed'], true) && $appointment->starts_at->isFuture())
+                            <form method="POST" action="{{ route('consultations.appointments.cancel', $appointment) }}" class="mt-3" onsubmit="return confirm('Cancel this consultation? You can book another available time afterward.');">@csrf @method('PATCH')<button class="rounded-lg border border-rose-900 px-3 py-2 text-xs text-rose-300">Cancel booking</button></form>
+                        @endif
                     </article>
                 @empty
                     <div class="rounded-xl border border-dashed border-slate-700 p-6 text-center">
@@ -83,4 +86,8 @@
             </div>
         </section>
     </div>
+    <section class="mt-10"><h2 class="text-xl font-semibold">Booking history &amp; updates</h2><p class="mt-2 text-sm text-slate-400">Cancelled bookings are not rescheduled. Book again from the teacher calendar.</p>
+        @error('booking')<p role="alert" class="mt-3 text-sm text-rose-300">{{ $message }}</p>@enderror
+        <div class="mt-4 space-y-3">@forelse($history as $booking)<article class="rounded-xl border border-slate-800 bg-slate-900 p-4"><p class="font-medium">{{ $booking->teacher->name }} · {{ $booking->starts_at->format('M j, Y · g:i A') }}</p><p class="mt-2 text-sm capitalize text-slate-400">{{ $booking->status }}</p>@if($booking->availability->cancelled_at && $booking->status === 'rejected')<p class="mt-2 text-sm text-rose-300">The teacher cancelled this availability. Pending and confirmed bookings were automatically rejected.</p>@endif<p class="mt-2 text-xs text-slate-500">{{ $booking->topic }}</p></article>@empty<p class="text-sm text-slate-500">No previous bookings or cancellations.</p>@endforelse</div><div class="mt-4">{{ $history->links() }}</div>
+    </section>
 @endsection

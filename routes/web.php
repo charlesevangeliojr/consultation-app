@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\SiteSettingsController;
 use App\Http\Controllers\Admin\AdminAccountsController;
 use App\Http\Controllers\Admin\AdminRolesController;
 use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\SchoolController;
 use App\Http\Controllers\ConsultationController;
 use App\Http\Controllers\StudentProfileController;
 use App\Http\Controllers\StudentDashboardController;
@@ -17,6 +18,8 @@ Route::get('/', function () {
     $publicAvailability = ConsultationAvailability::query()
         ->with('teacher')
         ->whereDate('date', '>=', today())
+        ->whereNull('cancelled_at')
+        ->whereHas('teacher', fn ($query) => $query->whereHas('teacher', fn ($profile) => $profile->where('consultation_approved', true)))
         ->orderBy('date')
         ->orderBy('starts_at')
         ->limit(12)
@@ -51,11 +54,20 @@ Route::middleware('auth')->prefix('consultations')->name('consultations.')->grou
     Route::post('/availability/{availability}/book', [ConsultationController::class, 'book'])->name('book');
     Route::get('/teacher', [ConsultationController::class, 'teacher'])->name('teacher');
     Route::post('/teacher/availability', [ConsultationController::class, 'availability'])->name('availability.store');
+    Route::put('/teacher/settings', [ConsultationController::class, 'teacherSettings'])->name('teacher.settings');
+    Route::patch('/teacher/availability/{availability}/cancel', [ConsultationController::class, 'cancelAvailability'])->name('availability.cancel');
+    Route::patch('/student/appointments/{appointment}/cancel', [ConsultationController::class, 'cancelBooking'])->name('appointments.cancel');
     Route::patch('/teacher/appointments/{appointment}', [ConsultationController::class, 'updateAppointment'])->name('appointments.update');
     Route::post('/logout', [ConsultationController::class, 'logout'])->name('logout');
 });
 
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/school', [SchoolController::class, 'index'])->middleware('permission:settings,view')->name('school');
+    Route::post('/school/{type}', [SchoolController::class, 'store'])->middleware('permission:settings,edit')->name('school.store');
+    Route::put('/school/{type}/{id}', [SchoolController::class, 'update'])->middleware('permission:settings,edit')->name('school.update');
+    Route::delete('/school/{type}/{id}', [SchoolController::class, 'destroy'])->middleware('permission:settings,edit')->name('school.destroy');
+    Route::put('/accounts/{user}/school-profile', [SchoolController::class, 'updateProfile'])->middleware('permission:accounts,edit')->name('accounts.school-profile');
+    Route::get('/consultations', [SchoolController::class, 'monitoring'])->middleware('permission:dashboard,view')->name('consultations');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::view('/', 'admin.dashboard')->middleware('permission:dashboard,view')->name('dashboard');

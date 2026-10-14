@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class SiteSetting extends Model
 {
-    protected $fillable = ['name', 'logo_path', 'favicon_path'];
+    protected $fillable = ['name', 'logo_path', 'favicon_path', 'queue_name_visibility'];
 
     protected function casts(): array
     {

@@ -7,6 +7,7 @@
         <p class="text-sm font-semibold uppercase tracking-[0.2em] text-rose-400">Student account</p>
         <h1 class="mt-2 text-3xl font-bold">Your profile</h1>
         <p class="mt-2 text-slate-400">Update your contact and student information below.</p>
+        <p class="mt-3 text-sm text-slate-300">Grade level: {{ $student->gradeLevel?->name ?: 'Not assigned' }} · Section: {{ $student->section?->name ?: 'Not assigned' }}. Contact an administrator to correct your class assignment.</p>
 
         <form method="POST" action="{{ route('consultations.student-profile.update') }}" enctype="multipart/form-data" class="mt-8 grid gap-5 rounded-2xl border border-slate-800 bg-slate-900 p-6 sm:grid-cols-2">
             @csrf

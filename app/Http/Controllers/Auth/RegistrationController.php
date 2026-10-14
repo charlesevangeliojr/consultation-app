@@ -7,6 +7,8 @@ use App\Models\Role;
 use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\User;
+use App\Models\GradeLevel;
+use App\Models\Subject;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -28,7 +30,11 @@ class RegistrationController extends Controller
             return view('auth.register-choice');
         }
 
-        return view('auth.register', ['selectedRole' => $request->query('role', 'student')]);
+        return view('auth.register', [
+            'selectedRole' => $role,
+            'gradeLevels' => GradeLevel::with('sections')->orderBy('name')->get(),
+            'subjects' => Subject::orderBy('name')->get(),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -51,6 +57,10 @@ class RegistrationController extends Controller
             'province' => ['nullable', 'string', 'max:150'],
             'postal_code' => ['nullable', 'string', 'max:20'],
             'lrn' => ['required_if:role,student', 'digits:12', 'unique:students,lrn'],
+            'grade_level_id' => ['exclude_unless:role,student', 'required', 'integer', 'exists:grade_levels,id'],
+            'section_id' => ['exclude_unless:role,student', 'required', 'integer', Rule::exists('sections', 'id')->where('grade_level_id', $request->input('grade_level_id'))],
+            'subject_ids' => ['exclude_unless:role,teacher', 'required', 'array', 'min:1'],
+            'subject_ids.*' => ['integer', 'distinct', 'exists:subjects,id'],
         ]);
 
         $user = DB::transaction(function () use ($validated) {
@@ -71,7 +81,8 @@ class RegistrationController extends Controller
             ]);
 
             if ($validated['role'] === 'teacher') {
-                Teacher::create(['user_id' => $user->id]);
+                $teacher = Teacher::create(['user_id' => $user->id]);
+                $teacher->subjects()->sync($validated['subject_ids']);
             } else {
                 $address = collect([
                     $validated['house_number'] ?? null,
@@ -88,6 +99,8 @@ class RegistrationController extends Controller
                     'gender' => $validated['gender'] ?? null,
                     'address' => $address ?: null,
                     'lrn' => $validated['lrn'] ?? null,
+                    'grade_level_id' => $validated['grade_level_id'],
+                    'section_id' => $validated['section_id'],
                 ]);
             }
 

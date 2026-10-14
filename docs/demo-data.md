@@ -1,0 +1,100 @@
+# Demo credentials and database data
+
+These are **fictional, local-development accounts**. Their credentials are public
+because this document and the SQL file are intended to be committed to GitHub.
+Do not use these accounts or passwords in a deployed school system.
+
+## Login credentials
+
+**Password for all eight demo accounts:** `DemoConsult!2026`
+
+| Role | Name | Email | Login page |
+| --- | --- | --- | --- |
+| Admin | Demo School Administrator | `demo.admin@example.com` | `/admin/login` |
+| Teacher | Maria Santos | `demo.teacher1@example.com` | `/portal/login` |
+| Teacher | Daniel Reyes | `demo.teacher2@example.com` | `/portal/login` |
+| Teacher | Angela Cruz | `demo.teacher3@example.com` | `/portal/login` |
+| Student | Alex Mendoza | `demo.student1@example.com` | `/portal/login` |
+| Student | Bea Garcia | `demo.student2@example.com` | `/portal/login` |
+| Student | Carlo Ramos | `demo.student3@example.com` | `/portal/login` |
+| Student | Diana Flores | `demo.student4@example.com` | `/portal/login` |
+
+Maria is approved, handles Mathematics and Science, uses 30-minute slots, manually
+approves requests, and hides queue names. Daniel is approved, handles English and
+Filipino, uses 20-minute slots, automatically confirms bookings, and shows queue
+names. Angela handles Computer Studies and awaits admin consultation approval.
+School-wide privacy settings still override teacher preferences.
+
+## Included sample data
+
+- Grades 10, 11, and 12, with two sections each: Newton/Galileo,
+  Einstein/Curie, and Tesla/Darwin.
+- Five subjects and teacher subject assignments.
+- Four student profiles with class assignments and fictional contact details.
+- Six active availability windows on October 15–17, 2026.
+- Four active bookings (pending/confirmed).
+- One cancelled availability window with a rejected booking.
+
+## Import the SQL snapshot
+
+File: [`database/sql/demo-consultation-data.sql`](../database/sql/demo-consultation-data.sql).
+It is a **MySQL/MariaDB data-only SQL file**, not a full database/schema dump.
+
+1. Install the project dependencies and configure your own `.env` database settings.
+2. Run migrations to create the tables:
+
+   ```sh
+   php artisan migrate
+   ```
+
+3. Import the SQL file into that same database using phpMyAdmin's **Import** tab,
+   MySQL Workbench's SQL editor, or the MySQL CLI:
+
+   ```sh
+   mysql -u YOUR_DB_USER -p YOUR_DATABASE < database/sql/demo-consultation-data.sql
+   ```
+
+   The CLI example uses a shell supporting `<` input redirection, such as Bash
+   or Windows Command Prompt (not PowerShell).
+
+4. Sign in using the credentials above.
+
+The SQL uses lookups rather than fixed primary-key IDs, preserves matching rows,
+and contains hashed demo passwords. It does not include `.env` configuration,
+real user accounts, sessions, tokens, or other students' consultation records.
+Use a fresh **development** database for the most predictable import. Existing
+accounts with matching emails are not overwritten, so their existing passwords
+and preferences remain unchanged. Existing conflicting LRNs can cause import
+failure. Back up any existing database before importing.
+
+The snapshot has fixed dates; once those dates pass, those sessions cannot be
+booked. For current future availability on a fresh installation, use the seeder
+**instead of** importing the SQL:
+
+```sh
+php artisan db:seed --class=DemoConsultationSeeder
+```
+
+Do not run `migrate:fresh` on a database containing data you want to keep.
+
+## Regenerate the demo SQL
+
+After creating the demo accounts locally:
+
+```sh
+php artisan demo:export-sql
+```
+
+This overwrites only `database/sql/demo-consultation-data.sql`. The command
+refuses to run in production or if the eight demo accounts do not have the
+documented demo password. Review any edited demo profiles before committing.
+
+## Include the data in GitHub
+
+Commit this Markdown file, `database/sql/demo-consultation-data.sql`, the demo
+seeder, and the exporter along with the application changes. The SQL file is
+not ignored by the project's `.gitignore`.
+
+Pushing to GitHub includes these files—it does **not** automatically import the
+data on another computer. Each developer must migrate and import or run the seeder.
+Never commit your `.env` or a full dump containing real school records.

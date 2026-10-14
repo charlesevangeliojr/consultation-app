@@ -13,10 +13,11 @@
         <h1 class="mt-2 text-3xl font-bold">Create your account</h1>
 
         @php
-            $initialStep = $errors->hasAny(['contact_number', 'birthday', 'gender', 'house_number', 'region', 'province', 'city', 'barangay', 'postal_code', 'lrn']) ? 2 : (($errors->hasAny(['password', 'password_confirmation']) ? ($selectedRole === 'student' ? 3 : 2) : 1));
             $credentialStep = $selectedRole === 'student' ? 3 : 2;
+            $initialStep = $errors->hasAny(['first_name', 'middle_name', 'last_name', 'suffix', 'email', 'role', 'subject_ids', 'subject_ids.*']) ? 1 : ($errors->hasAny(['contact_number', 'birthday', 'gender', 'house_number', 'region', 'province', 'city', 'barangay', 'postal_code', 'lrn', 'grade_level_id', 'section_id']) ? 2 : ($errors->hasAny(['password', 'password_confirmation']) ? $credentialStep : 1));
             $stepCount = $selectedRole === 'student' ? 3 : 2;
-            $secondStepFields = $selectedRole === 'student' ? ['contact_number', 'birthday', 'gender', 'lrn'] : ['password', 'password_confirmation'];
+            $firstStepFields = $selectedRole === 'teacher' ? ['first_name', 'last_name', 'email', 'subject_ids[]'] : ['first_name', 'last_name', 'email'];
+            $secondStepFields = $selectedRole === 'student' ? ['contact_number', 'birthday', 'gender', 'lrn', 'grade_level_id', 'section_id'] : ['password', 'password_confirmation'];
         @endphp
 
         <div id="registration-form" data-initial-step="{{ $initialStep }}" data-step-count="{{ $stepCount }}">
@@ -60,12 +61,45 @@
                         <input id="email" name="email" type="email" maxlength="255" autocomplete="email" value="{{ old('email') }}" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-rose-400">
                         @error('email') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
                     </div>
+                    @if ($selectedRole === 'teacher')
+                        <div>
+                            <label for="subject_ids" class="mb-2 block text-sm font-medium">Subjects you handle</label>
+                            <select id="subject_ids" name="subject_ids[]" multiple size="4" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-rose-400">
+                                @foreach ($subjects as $subject)
+                                    <option value="{{ $subject->id }}" @selected(in_array($subject->id, old('subject_ids', [])))>{{ $subject->name }}</option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1 text-xs text-slate-500">Select one or more subjects. Use Ctrl/Cmd to select multiple on desktop.</p>
+                            @if ($subjects->isEmpty())<p class="mt-2 text-sm text-amber-300">An administrator must add subjects before you can register.</p>@endif
+                            @error('subject_ids') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
+                            @foreach ($errors->get('subject_ids.*') as $messages) @foreach ($messages as $message)<p class="mt-2 text-sm text-rose-300">{{ $message }}</p>@endforeach @endforeach
+                        </div>
+                    @endif
                     <button type="button" data-next class="w-full rounded-lg bg-rose-500 px-5 py-3 font-semibold transition hover:bg-rose-400">Continue</button>
                 </section>
 
                 @if ($selectedRole === 'student')
                     <section data-form-step="2" class="hidden space-y-5">
                         <h2 class="text-lg font-semibold">Student details</h2>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label for="grade_level_id" class="mb-2 block text-sm font-medium">Grade level</label>
+                                <select id="grade_level_id" name="grade_level_id" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3">
+                                    <option value="">Select grade level</option>
+                                    @foreach ($gradeLevels as $grade)<option value="{{ $grade->id }}" @selected(old('grade_level_id') == $grade->id)>{{ $grade->name }}</option>@endforeach
+                                </select>
+                                @error('grade_level_id')<p class="mt-2 text-sm text-rose-300">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label for="section_id" class="mb-2 block text-sm font-medium">Section</label>
+                                <select id="section_id" name="section_id" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3">
+                                    <option value="">Select section</option>
+                                    @foreach ($gradeLevels as $grade) @foreach ($grade->sections as $section)<option value="{{ $section->id }}" data-grade="{{ $grade->id }}" @selected(old('section_id') == $section->id)>{{ $section->name }}</option>@endforeach @endforeach
+                                </select>
+                                @error('section_id')<p class="mt-2 text-sm text-rose-300">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                        @if ($gradeLevels->isEmpty() || $gradeLevels->every(fn ($grade) => $grade->sections->isEmpty()))<p class="text-sm text-amber-300">An administrator must add grade levels and sections before you can register.</p>@endif
                         <div>
                             <label for="contact_number" class="mb-2 block text-sm font-medium">Contact number <span class="text-rose-400" aria-label="required">*</span></label>
                             <div class="flex overflow-hidden rounded-lg border border-slate-700 bg-slate-950 focus-within:border-rose-400">
@@ -182,8 +216,21 @@
             const count = Number(wrapper.dataset.stepCount);
             let current = Number(wrapper.dataset.initialStep);
             const sections = [...form.querySelectorAll('[data-form-step]')];
+            const serverErrors = @json($errors->messages());
+            const fields = [...form.querySelectorAll('section input, section select, section textarea')];
+            const serverErrorValues = new Map();
+            fields.forEach(field => {
+                const errorName = field.name.replace(/\[\]$/, '');
+                const message = serverErrors[errorName]?.[0] || Object.entries(serverErrors).find(([key]) => key.startsWith(`${errorName}.`))?.[1]?.[0];
+                if (message) {
+                    serverErrors[field.name] = [message];
+                    serverErrorValues.set(field.name, field.multiple ? JSON.stringify([...field.selectedOptions].map(option => option.value)) : field.value);
+                }
+                if (['region', 'province', 'city', 'barangay'].includes(field.name)) field.maxLength = 150;
+            });
+            document.getElementById('password').minLength = 8;
             const stepFields = {
-                1: ['first_name', 'last_name', 'email'],
+                1: @json($firstStepFields),
                 2: @json($secondStepFields),
                 3: ['password', 'password_confirmation'],
             };
@@ -293,7 +340,7 @@
                     const active = Number(section.dataset.formStep) === current;
                     section.classList.toggle('hidden', !active);
                     section.querySelectorAll('input, select, textarea').forEach(field => {
-                        field.required = active && (stepFields[current] || []).includes(field.name);
+                        field.required = (stepFields[Number(section.dataset.formStep)] || []).includes(field.name);
                     });
                 });
                 document.querySelectorAll('[data-progress-step]').forEach(item => {
@@ -303,12 +350,59 @@
                 });
                 document.getElementById('step-label').textContent = `Step ${current} of ${count}`;
             }
+            function updateValidity(field) {
+                let message = '';
+                const value = field.multiple ? JSON.stringify([...field.selectedOptions].map(option => option.value)) : field.value;
+                if (serverErrorValues.has(field.name) && value === serverErrorValues.get(field.name)) {
+                    message = serverErrors[field.name][0];
+                } else if (field.required && !field.value.trim()) {
+                    message = 'Please fill out this field.';
+                } else if (field.name === 'password' && field.value.length < 8) {
+                    message = 'Password must be at least 8 characters.';
+                } else if (field.name === 'password_confirmation' && field.value !== document.getElementById('password').value) {
+                    message = 'Passwords must match.';
+                } else if (field.maxLength > 0 && field.value.length > field.maxLength) {
+                    message = `Please use no more than ${field.maxLength} characters.`;
+                }
+                field.setCustomValidity(message);
+            }
+            function validateStep(step) {
+                const section = sections.find(section => Number(section.dataset.formStep) === step);
+                const stepInputs = [...section.querySelectorAll('input, select, textarea')];
+                stepInputs.forEach(updateValidity);
+                const invalidField = stepInputs.find(field => !field.checkValidity());
+                if (!invalidField) return true;
+                current = step;
+                render();
+                invalidField.reportValidity();
+                return false;
+            }
+            fields.forEach(field => {
+                const update = () => {
+                    updateValidity(field);
+                    if (field.name === 'password') updateValidity(document.getElementById('password_confirmation'));
+                };
+                field.addEventListener('input', update);
+                field.addEventListener('change', update);
+            });
             form.querySelectorAll('[data-next]').forEach(button => button.addEventListener('click', () => {
-                const activeSection = sections.find(section => Number(section.dataset.formStep) === current);
-                const requiredFields = (stepFields[current] || []).map(name => activeSection.querySelector(`[name="${name}"]`)).filter(Boolean);
-                const invalidField = requiredFields.find(field => !field.reportValidity());
-                if (!invalidField && current < count) { current++; render(); }
+                if (validateStep(current) && current < count) { current++; render(); }
             }));
+            // Validate before reporting errors so hidden steps can be shown and focused.
+            form.noValidate = true;
+            form.addEventListener('submit', event => {
+                for (let step = 1; step <= count; step++) {
+                    if (!validateStep(step)) {
+                        event.preventDefault();
+                        return;
+                    }
+                }
+                if (current < count) {
+                    event.preventDefault();
+                    current++;
+                    render();
+                }
+            });
             form.querySelectorAll('[data-previous]').forEach(button => button.addEventListener('click', () => {
                 if (current > 1) { current--; render(); }
             }));
@@ -323,7 +417,19 @@
                 button.setAttribute('aria-label', `${show ? 'Hide' : 'Show'} ${input.id === 'password' ? 'password' : 'confirmation password'}`);
             }));
             render();
-            loadRegions(oldLocation.region);
+            const gradeInput = document.getElementById('grade_level_id');
+            const sectionInput = document.getElementById('section_id');
+            if (gradeInput && sectionInput) {
+                const options = [...sectionInput.options].slice(1);
+                const filterSections = () => {
+                    const selected = sectionInput.value;
+                    sectionInput.replaceChildren(new Option('Select section', ''), ...options.filter(option => option.dataset.grade === gradeInput.value));
+                    sectionInput.value = [...sectionInput.options].some(option => option.value === selected) ? selected : '';
+                };
+                gradeInput.addEventListener('change', filterSections);
+                filterSections();
+            }
+            if (regionInput) loadRegions(oldLocation.region);
         })();
     </script>
 </body>

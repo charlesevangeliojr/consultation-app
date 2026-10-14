@@ -55,6 +55,14 @@
             @error('favicon') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
         </div>
 
-        <button type="submit" class="rounded-lg bg-rose-500 px-5 py-3 font-semibold transition hover:bg-rose-400">Save branding</button>
+        <div class="border-t border-slate-800 pt-6">
+            <label for="queue_name_visibility" class="mb-2 block text-sm font-medium">Student names in consultation queues</label>
+            <select id="queue_name_visibility" name="queue_name_visibility" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3">
+                @foreach(['teacher_choice' => 'Let each teacher choose', 'hide_all' => 'Hide student names school-wide', 'show_all' => 'Show student names school-wide'] as $value => $label)<option value="{{ $value }}" @selected(old('queue_name_visibility', $siteSettings->queue_name_visibility) === $value)>{{ $label }}</option>@endforeach
+            </select>
+            <p class="mt-2 text-xs text-slate-400">School-wide rules override teacher preferences immediately. Teachers and authorized administrators can always see names; students always recognize their own bookings. Consultation reasons stay private.</p>
+            @error('queue_name_visibility')<p class="mt-2 text-sm text-rose-300">{{ $message }}</p>@enderror
+        </div>
+        <button type="submit" class="rounded-lg bg-rose-500 px-5 py-3 font-semibold transition hover:bg-rose-400">Save settings</button>
     </form>
 @endsection

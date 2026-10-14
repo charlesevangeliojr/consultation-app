@@ -25,6 +25,7 @@ class SiteSettingsController extends Controller
             'remove_logo' => ['sometimes', 'boolean'],
             'favicon' => ['nullable', 'file', 'mimes:ico,png,jpg,jpeg,webp', 'max:1024'],
             'remove_favicon' => ['sometimes', 'boolean'],
+            'queue_name_visibility' => ['sometimes', 'in:teacher_choice,hide_all,show_all'],
         ]);
 
         if (($request->hasFile('logo') && $request->boolean('remove_logo'))
@@ -54,10 +55,11 @@ class SiteSettingsController extends Controller
         }
 
         $settings->name = $validated['name'];
+        if (isset($validated['queue_name_visibility'])) $settings->queue_name_visibility = $validated['queue_name_visibility'];
         $settings->save();
 
         Storage::disk('public')->delete(array_filter($oldFiles));
 
-        return back()->with('status', 'Project branding updated.');
+        return back()->with('status', 'School settings updated.');
     }
 }

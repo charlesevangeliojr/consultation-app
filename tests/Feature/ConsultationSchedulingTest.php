@@ -17,7 +17,9 @@ class ConsultationSchedulingTest extends TestCase
     private function account(string $roleName, string $email): User
     {
         $role = Role::firstOrCreate(['name' => $roleName], ['is_super_admin' => false]);
-        return User::factory()->create(['email' => $email, 'role_id' => $role->id]);
+        $user = User::factory()->create(['email' => $email, 'role_id' => $role->id]);
+        if ($user->isTeacher()) $user->teacher()->create(['consultation_approved' => true]);
+        return $user;
     }
 
     public function test_teacher_can_publish_availability_and_student_can_request_a_slot(): void
@@ -70,8 +72,8 @@ class ConsultationSchedulingTest extends TestCase
         ]);
         $slot = Carbon::parse($date.' 10:00')->format('Y-m-d H:i:s');
 
-        $this->actingAs($student)->post(route('consultations.book', $availability), ['starts_at' => $slot])->assertRedirect();
-        $this->actingAs($otherStudent)->post(route('consultations.book', $availability), ['starts_at' => $slot])->assertSessionHasErrors('starts_at');
+        $this->actingAs($student)->post(route('consultations.book', $availability), ['starts_at' => $slot, 'topic' => 'Course planning'])->assertRedirect();
+        $this->actingAs($otherStudent)->post(route('consultations.book', $availability), ['starts_at' => $slot, 'topic' => 'Course planning'])->assertSessionHasErrors('starts_at');
         $this->assertDatabaseCount('consultation_appointments', 1);
     }
 }

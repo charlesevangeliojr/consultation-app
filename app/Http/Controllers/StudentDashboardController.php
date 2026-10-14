@@ -32,7 +32,11 @@ class StudentDashboardController extends Controller
             ->map(fn (ConsultationAppointment $appointment) => $appointment->starts_at->toDateString())
             ->unique()
             ->values();
+        $history = ConsultationAppointment::where('student_id', $user->id)
+            ->where(function ($query) {
+                $query->whereIn('status', ['cancelled', 'rejected', 'completed'])->orWhere('starts_at', '<', now());
+            })->with(['teacher', 'availability'])->orderByDesc('updated_at')->paginate(10);
 
-        return view('student.dashboard', compact('appointments', 'appointmentDates', 'month'));
+        return view('student.dashboard', compact('appointments', 'appointmentDates', 'month', 'history'));
     }
 }

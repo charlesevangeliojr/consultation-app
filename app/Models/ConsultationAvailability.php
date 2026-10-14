@@ -8,11 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ConsultationAvailability extends Model
 {
-    protected $fillable = ['teacher_id', 'date', 'starts_at', 'ends_at', 'slot_minutes', 'location'];
+    protected $fillable = ['teacher_id', 'date', 'starts_at', 'ends_at', 'slot_minutes', 'location', 'cancelled_at'];
 
     protected function casts(): array
     {
-        return ['date' => 'date', 'slot_minutes' => 'integer'];
+        return ['date' => 'date', 'slot_minutes' => 'integer', 'cancelled_at' => 'datetime'];
     }
 
     public function teacher(): BelongsTo

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\GradeLevel;
+use App\Models\Subject;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -39,6 +41,8 @@ class AdminAccountsController extends Controller
             'role_id' => $validated['role_id'] ?? null,
         ]);
         $user->syncPermissions($this->permissionMap($validated));
+        if ($user->isTeacher()) $user->teacher()->firstOrCreate();
+        if ($user->isStudent()) $user->student()->firstOrCreate();
 
         return redirect()->route('admin.accounts')->with('status', 'Account created successfully.');
     }
@@ -50,6 +54,8 @@ class AdminAccountsController extends Controller
         return view('admin.accounts.edit', [
             'account' => $user,
             'roles' => Role::query()->where('is_super_admin', false)->orderBy('name')->get(),
+            'gradeLevels' => GradeLevel::with('sections')->orderBy('name')->get(),
+            'subjects' => Subject::orderBy('name')->get(),
         ]);
     }
 
@@ -67,6 +73,8 @@ class AdminAccountsController extends Controller
         }
 
         $user->save();
+        if ($user->isTeacher()) $user->teacher()->firstOrCreate();
+        if ($user->isStudent()) $user->student()->firstOrCreate();
         $user->syncPermissions($this->permissionMap($validated));
 
         return redirect()->route('admin.accounts')->with('status', 'Account updated successfully.');
