@@ -33,6 +33,16 @@ uses `dashboard` view permission.
 
 ## Teacher workflow
 
+- The teacher portal opens with **My schedule calendar**. Browse previous/next
+  months, return to Today, and select a date to see availability and consultations
+  in time order, including student names, reasons, locations, and booking status.
+  Past schedules are available by month; cancelled availability and
+  cancelled/rejected bookings are excluded from the scheduled calendar.
+- Calendar markers distinguish blue published availability, amber pending
+  requests, green confirmed bookings, and gray completed consultations. Desktop
+  cells also show counts and status-colored previews. A rose circle marks Today,
+  and a rose outline marks the selected date. The legend and date tooltips explain
+  every marker; empty months explain why no date indicators are displayed.
 - Register with one or more admin-defined subjects; approval is initially off.
 - Set default duration (5–240 minutes), automatic/manual booking approval, and
   student-name visibility in **Consultation settings**.
@@ -84,6 +94,38 @@ New accounts all use the local testing password `DemoConsult!2026`:
 Do not use these publicly documented demo credentials in a deployed school app.
 
 ## Automated checks
+
+### Mobile navigation and responsive layouts
+
+Below 1024px, signed-in students, teachers, and administrators use fixed bottom
+navigation. Desktop layouts retain the student/admin sidebars. The teacher portal
+uses a fixed desktop sidebar and a full-width workspace (no centered width cap),
+so the calendar expands to fill the screen beside navigation. Teacher sidebar
+links retain the currently selected month and date.
+Bottom spacing includes the phone safe-area inset, so the bar does not cover page
+content. Admin destinations are filtered by module permissions; Accounts retains
+an accessible Roles link. Teacher tabs navigate to calendar, requests, publishing
+(approved teachers only), and preferences, and highlight the section in view.
+
+An optional real-browser check is available at `tests/browser/mobile-responsive.cjs`.
+With Playwright installed, demo accounts seeded, and the app served at
+`http://127.0.0.1:8091`, run `node tests/browser/mobile-responsive.cjs`.
+Set `APP_TEST_URL` for another local URL, `PLAYWRIGHT_MODULE` for an external
+Playwright installation, or `CHROME_PATH` to use an installed Chrome executable.
+It checks teacher, student, and admin layouts at 320, 375, 390, 640, 768, 1024,
+1280, 1440, 1920, and 2560px, including long teacher content, touch targets,
+navigation, overflow, and full-width desktop sidebar sizing.
+
+The responsive calendar follows the **compact month + readable agenda** pattern
+illustrated by [Mobiscroll's mobile month view](https://demo.mobiscroll.com/javascript/eventcalendar/mobile-month-view)
+and [FullCalendar's list view](https://fullcalendar.io/docs/list-view). This is an
+original implementation, not copied vendor source, and adds no calendar library
+dependency. Small calendar containers show date numbers and event dots, with
+details in the agenda below; larger containers add event previews, and the
+teacher's agenda moves alongside the month when there is enough space. CSS
+container queries adapt to actual calendar space, including the student sidebar,
+rather than assuming viewport width equals available width. Months render only
+the four, five, or six rows required. All date navigation still works without JS.
 
 Run `php artisan test`. Workflow tests cover registration catalogs, teacher
 permission, teacher-only booking approval, duration snapshots, privacy overrides,

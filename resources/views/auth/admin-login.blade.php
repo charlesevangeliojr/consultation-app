@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Admin login · {{ config('app.name') }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{{ asset('js/password-visibility.js') }}" defer></script>
 </head>
 <body class="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-white">
     <main class="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl">
@@ -25,11 +26,7 @@
                 <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus autocomplete="username"
                     class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-rose-400">
             </div>
-            <div>
-                <label for="password" class="mb-2 block text-sm font-medium">Password</label>
-                <input id="password" name="password" type="password" required autocomplete="current-password"
-                    class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-rose-400">
-            </div>
+            @include('auth.partials.login-password')
             <button type="submit" class="w-full rounded-lg bg-rose-500 px-4 py-3 font-semibold transition hover:bg-rose-400">Sign in</button>
         </form>
         <a href="{{ url('/') }}" class="mt-6 inline-block text-sm text-slate-400 hover:text-white">← Back to home</a>

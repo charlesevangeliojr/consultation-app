@@ -1,0 +1,87 @@
+/* The mobile layout stays edge-to-edge; desktop reserves only sidebar space. */
+.teacher-sidebar {
+    display: none;
+}
+
+.teacher-layout {
+    min-width: 0;
+    min-height: 100dvh;
+}
+
+.teacher-portal {
+    width: 100%;
+    max-width: none;
+}
+
+.teacher-sidebar-navigation a {
+    display: flex;
+    min-height: 48px;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 10px;
+    color: #cbd5e1;
+    font-size: 14px;
+}
+
+.teacher-sidebar-navigation a:hover { background: #1e293b; }
+.teacher-sidebar-navigation a[aria-current] { color: #fda4af; background: rgb(244 63 94 / 12%); }
+.teacher-sidebar-navigation svg { width: 22px; height: 22px; flex-shrink: 0; }
+.teacher-sidebar-navigation a:focus-visible { outline: 2px solid #fb7185; outline-offset: 2px; }
+
+@media (min-width: 1024px) {
+    .teacher-sidebar {
+        position: fixed;
+        z-index: 30;
+        inset: 0 auto 0 0;
+        display: flex;
+        width: 240px;
+        flex-direction: column;
+        overflow-y: auto;
+        border-right: 1px solid #1e293b;
+        background: #0f172a;
+    }
+
+    .teacher-layout { padding-left: 240px; }
+    .teacher-topbar { min-height: 64px; }
+}
+
+/* Keep the seven-day grid usable without hiding horizontal overflow. */
+.teacher-portal :where(section, article, form, form > div) {
+    min-width: 0;
+}
+
+.teacher-portal :where(p, h1, h2, h3, h4) {
+    overflow-wrap: anywhere;
+}
+
+.teacher-portal :where(input, select, textarea) {
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+    /* Prevent focus-triggered input zoom on mobile Safari. */
+    font-size: 16px;
+}
+
+.teacher-portal button,
+.teacher-portal .calendar-navigation {
+    min-height: 44px;
+}
+
+.teacher-portal .calendar-navigation {
+    display: inline-flex;
+    min-width: 44px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.teacher-portal .request-actions button {
+    width: 100%;
+}
+
+.teacher-portal :where(a, button, input, select, textarea):focus-visible {
+    outline: 2px solid #fb7185;
+    outline-offset: 3px;
+}

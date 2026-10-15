@@ -111,7 +111,27 @@ class ConsultationController extends Controller
         $profile = $user->teacher()->firstOrCreate();
         $availability = ConsultationAvailability::query()->where('teacher_id', $user->id)->whereNull('cancelled_at')->whereDate('date', '>=', today())->with('appointments')->orderBy('date')->orderBy('starts_at')->get();
         $appointments = ConsultationAppointment::query()->where('teacher_id', $user->id)->with(['student', 'availability'])->whereNotIn('status', ['cancelled', 'rejected'])->orderBy('starts_at')->get();
-        return view('teacher.calendar', compact('availability', 'appointments', 'profile'));
+        $calendarInput = request()->validate([
+            'month' => ['nullable', 'date_format:Y-m'],
+            'day' => ['nullable', 'date_format:Y-m-d'],
+        ]);
+        $month = ! empty($calendarInput['month'])
+            ? Carbon::createFromFormat('!Y-m', $calendarInput['month'])->startOfMonth()
+            : (! empty($calendarInput['day']) ? Carbon::parse($calendarInput['day'])->startOfMonth() : now()->startOfMonth());
+        $selectedDay = ! empty($calendarInput['day'])
+            ? Carbon::parse($calendarInput['day'])
+            : ($month->isSameMonth(today()) ? today() : $month->copy());
+        if (! $selectedDay->isSameMonth($month)) {
+            throw ValidationException::withMessages(['day' => 'Select a date in the displayed month.']);
+        }
+        $calendarAvailability = ConsultationAvailability::where('teacher_id', $user->id)->whereNull('cancelled_at')
+            ->whereBetween('date', [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()])
+            ->orderBy('date')->orderBy('starts_at')->get()->groupBy(fn ($period) => $period->date->toDateString());
+        $calendarAppointments = ConsultationAppointment::where('teacher_id', $user->id)->whereNotIn('status', ['cancelled', 'rejected'])
+            ->whereBetween('starts_at', [$month, $month->copy()->endOfMonth()])->with(['student', 'availability'])
+            ->orderBy('starts_at')->get()->groupBy(fn ($booking) => $booking->starts_at->toDateString());
+
+        return view('teacher.calendar', compact('availability', 'appointments', 'profile', 'month', 'selectedDay', 'calendarAvailability', 'calendarAppointments'));
     }
 
     public function availability(Request $request): RedirectResponse

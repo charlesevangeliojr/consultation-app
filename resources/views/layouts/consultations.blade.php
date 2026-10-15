@@ -2,13 +2,37 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#020617">
     <title>@yield('title') · {{ $siteSettings->name ?? 'ConSync' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.12/dist/turbo.es2017-umd.js" defer></script>
+    <link rel="stylesheet" href="{{ asset('css/mobile-navigation.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/responsive-calendar.css') }}">
+    <script src="{{ asset('js/mobile-navigation.js') }}" defer></script>
+    @if(request()->routeIs('consultations.teacher'))
+        <link rel="stylesheet" href="{{ asset('css/teacher-calendar.css') }}">
+    @endif
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-100 antialiased">
+<body class="has-mobile-navigation min-h-screen bg-slate-950 text-slate-100 antialiased">
+    @php
+        $mobileItems = [];
+        if (auth()->user()->isStudent()) {
+            $mobileItems = [
+                ['label' => 'Dashboard', 'icon' => 'home', 'url' => route('consultations.dashboard'), 'active' => request()->routeIs('consultations.dashboard')],
+                ['label' => 'Calendar', 'icon' => 'calendar', 'url' => route('consultations.browse'), 'active' => request()->routeIs('consultations.browse')],
+                ['label' => 'My profile', 'icon' => 'profile', 'url' => route('consultations.student-profile.edit'), 'active' => request()->routeIs('consultations.student-profile.*')],
+            ];
+        } elseif (auth()->user()->isTeacher()) {
+            $calendarUrl = request()->routeIs('consultations.teacher') ? request()->fullUrl() : route('consultations.teacher');
+            $mobileItems = [
+                ['label' => 'Calendar', 'icon' => 'calendar', 'url' => $calendarUrl.'#teacher-month-calendar', 'section' => 'teacher-month-calendar', 'active' => true],
+                ['label' => 'Requests', 'icon' => 'users', 'url' => $calendarUrl.'#teacher-requests', 'section' => 'teacher-requests'],
+            ];
+            if (auth()->user()->teacher?->consultation_approved) $mobileItems[] = ['label' => 'Publish', 'icon' => 'plus', 'url' => $calendarUrl.'#teacher-publish', 'section' => 'teacher-publish'];
+            $mobileItems[] = ['label' => 'Settings', 'icon' => 'settings', 'url' => $calendarUrl.'#teacher-settings', 'section' => 'teacher-settings'];
+        }
+    @endphp
     @if (auth()->user()->isStudent())
         <aside class="fixed inset-y-0 left-0 z-30 hidden w-72 flex-col border-r border-slate-800 bg-slate-900 lg:flex">
             <a href="{{ route('consultations.home') }}" class="flex items-center gap-3 border-b border-slate-800 px-6 py-5 text-lg font-bold">
@@ -36,30 +60,18 @@
 
         <div class="lg:pl-72">
             <header class="sticky top-0 z-20 border-b border-slate-800 bg-slate-900/95 backdrop-blur">
-                <div class="flex items-center justify-between px-5 py-4 lg:justify-end lg:px-8">
-                    <a href="{{ route('consultations.home') }}" class="flex items-center gap-2 text-base font-bold lg:hidden">
+                <div class="flex items-center justify-between gap-3 px-5 py-4 lg:justify-end lg:px-8">
+                    <a href="{{ route('consultations.home') }}" class="flex min-w-0 items-center gap-2 text-base font-bold lg:hidden">
                         @if ($siteSettings->logo_path)
-                            <img src="{{ asset('storage/'.$siteSettings->logo_path) }}" alt="" class="h-8 w-8 rounded object-contain">
+                            <img src="{{ asset('storage/'.$siteSettings->logo_path) }}" alt="" class="h-8 w-8 shrink-0 rounded object-contain">
                         @else
-                            <span class="grid h-8 w-8 place-items-center rounded-lg bg-rose-500 text-sm">{{ mb_substr($siteSettings->name ?: 'C', 0, 1) }}</span>
+                            <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-rose-500 text-sm">{{ mb_substr($siteSettings->name ?: 'C', 0, 1) }}</span>
                         @endif
-                        <span>{{ $siteSettings->name ?: 'ConSync' }}</span>
+                        <span class="truncate">{{ $siteSettings->name ?: 'ConSync' }}</span>
                     </a>
                     <span class="hidden text-sm text-slate-400 lg:block">{{ auth()->user()->name }}</span>
-                    <button id="student-mobile-menu-button" type="button" aria-expanded="false" aria-controls="student-mobile-menu" class="grid h-10 w-10 place-items-center rounded-lg border border-slate-700 text-slate-200 hover:bg-slate-800 lg:hidden">
-                        <span class="sr-only">Toggle navigation</span>
-                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
-                    </button>
+                    <form method="POST" action="{{ route('consultations.logout') }}" class="shrink-0 lg:hidden">@csrf<button class="min-h-11 rounded-lg border border-slate-700 px-3 text-sm text-slate-300">Sign out</button></form>
                 </div>
-                <nav id="student-mobile-menu" aria-label="Student navigation" class="hidden border-t border-slate-800 px-5 py-3 lg:hidden">
-                    <a href="{{ route('consultations.dashboard') }}" class="block rounded-lg px-3 py-3 text-sm {{ request()->routeIs('consultations.dashboard') ? 'bg-rose-500/10 text-rose-300' : 'text-slate-300 hover:bg-slate-800' }}">Dashboard</a>
-                    <a href="{{ route('consultations.browse') }}" class="block rounded-lg px-3 py-3 text-sm {{ request()->routeIs('consultations.browse') ? 'bg-rose-500/10 text-rose-300' : 'text-slate-300 hover:bg-slate-800' }}">Calendar</a>
-                    <a href="{{ route('consultations.student-profile.edit') }}" class="block rounded-lg px-3 py-3 text-sm {{ request()->routeIs('consultations.student-profile.*') ? 'bg-rose-500/10 text-rose-300' : 'text-slate-300 hover:bg-slate-800' }}">My profile</a>
-                    <form method="POST" action="{{ route('consultations.logout') }}" class="mt-2 border-t border-slate-800 pt-2">
-                        @csrf
-                        <button class="w-full rounded-lg px-3 py-3 text-left text-sm text-slate-400 hover:bg-slate-800 hover:text-white">Sign out</button>
-                    </form>
-                </nav>
             </header>
             <main class="mx-auto max-w-6xl px-5 py-8 sm:py-10 lg:px-8">
                 @if (session('status'))
@@ -68,36 +80,46 @@
                 @yield('content')
             </main>
         </div>
-        <script>
-            (() => {
-                const button = document.getElementById('student-mobile-menu-button');
-                const menu = document.getElementById('student-mobile-menu');
-                button?.addEventListener('click', () => {
-                    const expanded = button.getAttribute('aria-expanded') === 'true';
-                    button.setAttribute('aria-expanded', String(!expanded));
-                    menu?.classList.toggle('hidden', expanded);
-                });
-            })();
-        </script>
+    @elseif(auth()->user()->isTeacher())
+        @include('teacher.partials.sidebar', ['items' => $mobileItems])
+        <div class="teacher-layout">
+            <header class="teacher-topbar border-b border-slate-800 bg-slate-900/80">
+                <div class="flex min-w-0 flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-5 lg:px-6">
+                    <a href="{{ route('consultations.home') }}" class="min-w-0 break-words text-lg font-bold [overflow-wrap:anywhere] lg:hidden">{{ $siteSettings->name ?: 'ConSync' }}<span class="text-rose-400">.</span></a>
+                    <p class="hidden text-sm font-medium text-slate-300 lg:block">Teacher workspace</p>
+                    <div class="flex min-w-0 items-center gap-3">
+                        <span class="min-w-0 truncate text-sm text-slate-400 sm:max-w-xs">{{ auth()->user()->name }}</span>
+                        <form method="POST" action="{{ route('consultations.logout') }}" class="shrink-0 lg:hidden">@csrf<button class="min-h-11 rounded-lg border border-slate-700 px-3 text-sm text-slate-300">Sign out</button></form>
+                    </div>
+                </div>
+            </header>
+            <main class="teacher-portal min-w-0 px-3 py-6 sm:px-5 sm:py-8 lg:px-6" id="teacher-workspace">
+                @if (session('status'))
+                    <div role="status" class="mb-6 rounded-xl border border-emerald-800 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200">{{ session('status') }}</div>
+                @endif
+                @yield('content')
+            </main>
+        </div>
     @else
         <header class="border-b border-slate-800 bg-slate-900/80">
             <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-4">
-                <a href="{{ route('consultations.home') }}" class="text-lg font-bold">{{ $siteSettings->name ?? 'ConSync' }}<span class="text-rose-400">.</span></a>
-                <div class="flex items-center gap-4">
-                    <span class="text-sm text-slate-400">{{ auth()->user()->name }}</span>
+                <a href="{{ route('consultations.home') }}" class="min-w-0 break-words text-lg font-bold [overflow-wrap:anywhere]">{{ $siteSettings->name ?? 'ConSync' }}<span class="text-rose-400">.</span></a>
+                <div class="flex w-full min-w-0 flex-wrap items-center gap-x-4 gap-y-2 sm:w-auto">
+                    <span class="w-full min-w-0 break-words text-sm text-slate-400 [overflow-wrap:anywhere] sm:w-auto sm:max-w-xs">{{ auth()->user()->name }}</span>
                     @if (auth()->user()->isTeacher())
-                        <a href="{{ route('consultations.teacher') }}" class="text-sm text-slate-300 hover:text-white">Teacher calendar</a>
+                        <a href="{{ route('consultations.teacher') }}" class="inline-flex min-h-11 items-center text-sm text-slate-300 hover:text-white">Teacher calendar</a>
                     @endif
-                    <form method="POST" action="{{ route('consultations.logout') }}">@csrf<button class="text-sm text-slate-400 hover:text-white">Sign out</button></form>
+                    <form method="POST" action="{{ route('consultations.logout') }}">@csrf<button class="min-h-11 text-sm text-slate-400 hover:text-white">Sign out</button></form>
                 </div>
             </div>
         </header>
-        <main class="mx-auto max-w-6xl px-5 py-9 sm:py-12">
+        <main @class(['mx-auto min-w-0 max-w-6xl px-3 py-6 sm:px-5 sm:py-12', 'teacher-portal' => request()->routeIs('consultations.teacher')])>
             @if (session('status'))
                 <div role="status" class="mb-6 rounded-xl border border-emerald-800 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200">{{ session('status') }}</div>
             @endif
             @yield('content')
         </main>
     @endif
+    @include('partials.mobile-navigation', ['mobileLabel' => auth()->user()->isStudent() ? 'Student mobile navigation' : 'Teacher mobile navigation'])
 </body>
 </html>
