@@ -7,6 +7,7 @@
 @error('topic')<p class="mt-4 rounded-lg bg-rose-950/40 p-3 text-sm text-rose-200">{{ $message }}</p>@enderror
 @if($selectedTeacher)
 <section class="mt-8"><div class="flex flex-wrap items-end justify-between gap-2"><div><h2 class="text-xl font-semibold">{{ $selectedTeacher->name }}</h2><p class="mt-1 text-sm text-slate-400">{{ $selectedTeacher->teacher->subjects->pluck('name')->join(', ') }}</p><p class="mt-1 text-sm text-slate-400">{{ $selectedTeacher->teacher->auto_approve_bookings ? 'Open slots are automatically confirmed when booked.' : 'Requests reserve the slot while awaiting teacher approval.' }}</p></div><span class="text-xs text-slate-500">Times: {{ config('app.timezone') }}</span></div>
+    @if($selectedTeacher->teacher->consultation_offerings)<div class="mt-5 rounded-xl border border-slate-800 bg-slate-900 p-4"><h3 class="text-sm font-semibold text-sky-300">What I can help you with</h3><p class="mt-2 whitespace-pre-line break-words text-sm text-slate-300 [overflow-wrap:anywhere]">{{ $selectedTeacher->teacher->consultation_offerings }}</p></div>@endif
     @include('student.teacher-calendar')
     <div class="mt-5 space-y-4">
         @forelse($availability as $period)
@@ -16,7 +17,7 @@
                 $cursor = $periodStart->copy();
                 $taken = $period->appointments->whereNotIn('status', ['cancelled', 'rejected'])->map(fn($a) => $a->starts_at->format('Y-m-d H:i'))->all();
             @endphp
-            <article id="availability-{{ $period->date->toDateString() }}" class="rounded-2xl border border-slate-800 bg-slate-900 p-5"><div class="flex flex-wrap items-center justify-between gap-2"><h3 class="font-semibold">{{ $period->date->format('l, F j, Y') }}</h3><span class="text-xs text-slate-400">{{ \Illuminate\Support\Carbon::parse($period->starts_at)->format('g:i A') }}–{{ \Illuminate\Support\Carbon::parse($period->ends_at)->format('g:i A') }} · {{ $period->slot_minutes }} min slots</span></div>@if($period->location)<p class="mt-1 text-xs text-slate-500">{{ $period->location }}</p>@endif
+            <article id="availability-{{ $period->date->toDateString() }}" data-schedule-date="{{ $period->date->toDateString() }}" class="rounded-2xl border border-slate-800 bg-slate-900 p-5"><div class="flex flex-wrap items-center justify-between gap-2"><h3 class="font-semibold">{{ $period->date->format('l, F j, Y') }}</h3><span class="text-xs text-slate-400">{{ \Illuminate\Support\Carbon::parse($period->starts_at)->format('g:i A') }}–{{ \Illuminate\Support\Carbon::parse($period->ends_at)->format('g:i A') }} · {{ $period->slot_minutes }} min slots</span></div>@if($period->location)<p class="mt-1 text-xs text-slate-500">{{ $period->location }}</p>@endif
                 <div class="mt-4 flex flex-wrap gap-2">
                     @while($cursor->copy()->addMinutes($period->slot_minutes)->lte($periodEnd))
                         @php $slotStart = $cursor->copy(); $slotEnd = $cursor->copy()->addMinutes($period->slot_minutes); $occupied = in_array($slotStart->format('Y-m-d H:i'), $taken, true); $cursor->addMinutes($period->slot_minutes); @endphp

@@ -74,6 +74,7 @@
     <div class="calendar-agenda" aria-labelledby="selected-day-heading">
         <h3 id="selected-day-heading" class="text-lg font-semibold">Schedule for {{ $selectedDay->format('l, F j, Y') }}</h3>
         <p class="mt-1 text-xs text-slate-400">Daily agenda · Times: {{ config('app.timezone') }}</p>
+        <a href="{{ route('consultations.teacher.requests') }}" class="mt-2 inline-flex min-h-11 items-center text-xs text-sky-300 underline underline-offset-4">Manage consultation requests →</a>
         <div class="calendar-agenda-columns mt-4">
             <div class="min-w-0">
                 <h4 class="text-sm font-semibold text-sky-300">Availability windows</h4>

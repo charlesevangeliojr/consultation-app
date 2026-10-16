@@ -10,9 +10,19 @@
     <link rel="stylesheet" href="{{ asset('css/mobile-navigation.css') }}">
     <link rel="stylesheet" href="{{ asset('css/responsive-calendar.css') }}">
     <script src="{{ asset('js/mobile-navigation.js') }}" defer></script>
-    @if(request()->routeIs('consultations.teacher'))
+    <script src="{{ asset('js/mobile-account-menu.js') }}" defer data-turbo-eval="false"></script>
+    <script src="{{ asset('js/calendar-schedule-modal.js') }}" defer data-turbo-eval="false"></script>
+    @if(auth()->user()->isTeacher())
         <link rel="stylesheet" href="{{ asset('css/teacher-calendar.css') }}">
+        <script src="{{ asset('js/teacher-account-menu.js') }}" defer data-turbo-eval="false"></script>
     @endif
+    @if(request()->routeIs('consultations.teacher-profile.*'))
+        <link rel="stylesheet" href="{{ asset('css/teacher-profile.css') }}">
+        <script src="{{ asset('js/profile-photo-cropper.js') }}" defer data-turbo-eval="false"></script>
+        <script src="{{ asset('js/teacher-profile.js') }}" defer data-turbo-eval="false"></script>
+        <script src="{{ asset('js/address-suggestions.js') }}" defer data-turbo-eval="false"></script>
+    @endif
+    <link rel="stylesheet" href="{{ asset('css/form-controls.css') }}">
 </head>
 <body class="has-mobile-navigation min-h-screen bg-slate-950 text-slate-100 antialiased">
     @php
@@ -26,11 +36,12 @@
         } elseif (auth()->user()->isTeacher()) {
             $calendarUrl = request()->routeIs('consultations.teacher') ? request()->fullUrl() : route('consultations.teacher');
             $mobileItems = [
-                ['label' => 'Calendar', 'icon' => 'calendar', 'url' => $calendarUrl.'#teacher-month-calendar', 'section' => 'teacher-month-calendar', 'active' => true],
-                ['label' => 'Requests', 'icon' => 'users', 'url' => $calendarUrl.'#teacher-requests', 'section' => 'teacher-requests'],
+                ['label' => 'Calendar', 'desktopLabel' => 'My calendar', 'icon' => 'calendar', 'url' => $calendarUrl, 'active' => request()->routeIs('consultations.teacher')],
+                ['label' => 'Requests', 'desktopLabel' => 'Consultation requests', 'icon' => 'users', 'url' => route('consultations.teacher.requests'), 'active' => request()->routeIs('consultations.teacher.requests')],
+                ['label' => 'Availability', 'icon' => 'plus', 'url' => route('consultations.teacher.availability'), 'active' => request()->routeIs('consultations.teacher.availability')],
+                ['label' => 'Settings', 'desktopLabel' => 'Consultation settings', 'icon' => 'settings', 'url' => route('consultations.teacher.preferences'), 'active' => request()->routeIs('consultations.teacher.preferences')],
+                ['label' => 'My profile', 'icon' => 'profile', 'url' => route('consultations.teacher-profile.edit'), 'active' => request()->routeIs('consultations.teacher-profile.*')],
             ];
-            if (auth()->user()->teacher?->consultation_approved) $mobileItems[] = ['label' => 'Publish', 'icon' => 'plus', 'url' => $calendarUrl.'#teacher-publish', 'section' => 'teacher-publish'];
-            $mobileItems[] = ['label' => 'Settings', 'icon' => 'settings', 'url' => $calendarUrl.'#teacher-settings', 'section' => 'teacher-settings'];
         }
     @endphp
     @if (auth()->user()->isStudent())
@@ -59,7 +70,7 @@
         </aside>
 
         <div class="lg:pl-72">
-            <header class="sticky top-0 z-20 border-b border-slate-800 bg-slate-900/95 backdrop-blur">
+            <header class="mobile-topbar sticky top-0 z-20 border-b border-slate-800 bg-slate-900/95 backdrop-blur">
                 <div class="flex items-center justify-between gap-3 px-5 py-4 lg:justify-end lg:px-8">
                     <a href="{{ route('consultations.home') }}" class="flex min-w-0 items-center gap-2 text-base font-bold lg:hidden">
                         @if ($siteSettings->logo_path)
@@ -70,7 +81,7 @@
                         <span class="truncate">{{ $siteSettings->name ?: 'ConSync' }}</span>
                     </a>
                     <span class="hidden text-sm text-slate-400 lg:block">{{ auth()->user()->name }}</span>
-                    <form method="POST" action="{{ route('consultations.logout') }}" class="shrink-0 lg:hidden">@csrf<button class="min-h-11 rounded-lg border border-slate-700 px-3 text-sm text-slate-300">Sign out</button></form>
+                    @include('partials.mobile-account-menu')
                 </div>
             </header>
             <main class="mx-auto max-w-6xl px-5 py-8 sm:py-10 lg:px-8">
@@ -83,14 +94,17 @@
     @elseif(auth()->user()->isTeacher())
         @include('teacher.partials.sidebar', ['items' => $mobileItems])
         <div class="teacher-layout">
-            <header class="teacher-topbar border-b border-slate-800 bg-slate-900/80">
+            <header class="mobile-topbar teacher-topbar border-b border-slate-800 bg-slate-900/80">
                 <div class="flex min-w-0 flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-5 lg:px-6">
-                    <a href="{{ route('consultations.home') }}" class="min-w-0 break-words text-lg font-bold [overflow-wrap:anywhere] lg:hidden">{{ $siteSettings->name ?: 'ConSync' }}<span class="text-rose-400">.</span></a>
-                    <p class="hidden text-sm font-medium text-slate-300 lg:block">Teacher workspace</p>
-                    <div class="flex min-w-0 items-center gap-3">
-                        <span class="min-w-0 truncate text-sm text-slate-400 sm:max-w-xs">{{ auth()->user()->name }}</span>
-                        <form method="POST" action="{{ route('consultations.logout') }}" class="shrink-0 lg:hidden">@csrf<button class="min-h-11 rounded-lg border border-slate-700 px-3 text-sm text-slate-300">Sign out</button></form>
+                    <a href="{{ route('consultations.home') }}" class="min-w-0 flex-1 truncate text-lg font-bold lg:hidden">{{ $siteSettings->name ?: 'ConSync' }}<span class="text-rose-400">.</span></a>
+                    <div class="hidden lg:block"><p class="text-xs text-slate-500">Teacher workspace</p><p class="mt-1 text-sm font-medium text-slate-200">{{ collect($mobileItems)->firstWhere('active', true)['desktopLabel'] ?? collect($mobileItems)->firstWhere('active', true)['label'] ?? 'Teacher portal' }}</p></div>
+                    <div class="hidden min-w-0 items-center gap-3 lg:flex">
+                        <a href="{{ route('consultations.teacher-profile.edit') }}" aria-label="Edit your teacher profile" class="flex min-w-0 items-center gap-2 text-sm text-slate-400 sm:max-w-xs">
+                            @include('teacher.partials.avatar', ['avatarSize' => 'h-9 w-9'])
+                            <span class="min-w-0 truncate">{{ auth()->user()->name }}</span>
+                        </a>
                     </div>
+                    @include('partials.mobile-account-menu')
                 </div>
             </header>
             <main class="teacher-portal min-w-0 px-3 py-6 sm:px-5 sm:py-8 lg:px-6" id="teacher-workspace">

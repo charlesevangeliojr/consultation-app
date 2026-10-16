@@ -109,8 +109,6 @@ class ConsultationController extends Controller
         $this->requireRole('teacher');
         $user = request()->user();
         $profile = $user->teacher()->firstOrCreate();
-        $availability = ConsultationAvailability::query()->where('teacher_id', $user->id)->whereNull('cancelled_at')->whereDate('date', '>=', today())->with('appointments')->orderBy('date')->orderBy('starts_at')->get();
-        $appointments = ConsultationAppointment::query()->where('teacher_id', $user->id)->with(['student', 'availability'])->whereNotIn('status', ['cancelled', 'rejected'])->orderBy('starts_at')->get();
         $calendarInput = request()->validate([
             'month' => ['nullable', 'date_format:Y-m'],
             'day' => ['nullable', 'date_format:Y-m-d'],
@@ -131,7 +129,39 @@ class ConsultationController extends Controller
             ->whereBetween('starts_at', [$month, $month->copy()->endOfMonth()])->with(['student', 'availability'])
             ->orderBy('starts_at')->get()->groupBy(fn ($booking) => $booking->starts_at->toDateString());
 
-        return view('teacher.calendar', compact('availability', 'appointments', 'profile', 'month', 'selectedDay', 'calendarAvailability', 'calendarAppointments'));
+        return view('teacher.calendar', compact('profile', 'month', 'selectedDay', 'calendarAvailability', 'calendarAppointments'));
+    }
+
+    public function teacherRequests(Request $request): View
+    {
+        $this->requireRole('teacher');
+        $profile = $request->user()->teacher()->firstOrCreate();
+        $filters = $request->validate(['status' => ['nullable', 'in:pending,confirmed,completed,cancelled,rejected']]);
+        $status = $filters['status'] ?? null;
+        $query = ConsultationAppointment::where('teacher_id', $request->user()->id);
+        $statusCounts = (clone $query)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status');
+        $appointments = $query->when($status, fn ($query) => $query->where('status', $status))
+            ->with(['student', 'availability'])->orderBy('starts_at')->orderBy('id')->paginate(12)->withQueryString();
+
+        return view('teacher.requests', compact('profile', 'appointments', 'status', 'statusCounts'));
+    }
+
+    public function teacherAvailability(Request $request): View
+    {
+        $this->requireRole('teacher');
+        $profile = $request->user()->teacher()->firstOrCreate();
+        $availability = ConsultationAvailability::where('teacher_id', $request->user()->id)->whereNull('cancelled_at')
+            ->whereDate('date', '>=', today())->orderBy('date')->orderBy('starts_at')->orderBy('id')
+            ->paginate(10)->withQueryString();
+
+        return view('teacher.availability', compact('profile', 'availability'));
+    }
+
+    public function teacherPreferences(Request $request): View
+    {
+        $this->requireRole('teacher');
+
+        return view('teacher.settings', ['profile' => $request->user()->teacher()->firstOrCreate()]);
     }
 
     public function availability(Request $request): RedirectResponse
@@ -158,7 +188,7 @@ class ConsultationController extends Controller
             if ($overlap) throw ValidationException::withMessages(['date' => 'This time overlaps another availability window you published.']);
             ConsultationAvailability::create(['teacher_id' => $teacher->id] + $data);
         });
-        return redirect()->route('consultations.teacher')->with('status', 'Consultation availability published.');
+        return redirect()->route('consultations.teacher.availability')->with('status', 'Consultation availability published.');
     }
 
     public function updateAppointment(Request $request, ConsultationAppointment $appointment): RedirectResponse
@@ -184,7 +214,7 @@ class ConsultationController extends Controller
             }
             $booking->update($data);
         });
-        return redirect()->route('consultations.teacher')->with('status', 'Consultation status updated.');
+        return redirect()->route('consultations.teacher.requests')->with('status', 'Consultation status updated.');
     }
 
     public function teacherSettings(Request $request): RedirectResponse
@@ -197,7 +227,7 @@ class ConsultationController extends Controller
         ]);
         $request->user()->teacher()->updateOrCreate([], $data);
 
-        return back()->with('status', 'Consultation preferences saved. Duration applies to new availability; existing bookings are unchanged.');
+        return redirect()->route('consultations.teacher.preferences')->with('status', 'Consultation preferences saved. Duration applies to new availability; existing bookings are unchanged.');
     }
 
     public function cancelAvailability(Request $request, ConsultationAvailability $availability): RedirectResponse
@@ -212,7 +242,7 @@ class ConsultationController extends Controller
             $period->appointments()->whereIn('status', ['pending', 'confirmed'])->update(['status' => 'rejected']);
         });
 
-        return back()->with('status', 'Availability cancelled. All pending and confirmed bookings in this window were automatically rejected.');
+        return redirect()->route('consultations.teacher.availability')->with('status', 'Availability cancelled. All pending and confirmed bookings in this window were automatically rejected.');
     }
 
     public function cancelBooking(Request $request, ConsultationAppointment $appointment): RedirectResponse

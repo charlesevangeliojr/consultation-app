@@ -13,12 +13,13 @@ use Tests\TestCase;
 class ConsultationSchedulingTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Concerns\CreatesCompleteTeacherProfiles;
 
     private function account(string $roleName, string $email): User
     {
         $role = Role::firstOrCreate(['name' => $roleName], ['is_super_admin' => false]);
         $user = User::factory()->create(['email' => $email, 'role_id' => $role->id]);
-        if ($user->isTeacher()) $user->teacher()->create(['consultation_approved' => true]);
+        if ($user->isTeacher()) $this->createCompleteTeacherProfile($user, ['consultation_approved' => true]);
         return $user;
     }
 
@@ -34,7 +35,7 @@ class ConsultationSchedulingTest extends TestCase
             'ends_at' => '11:00',
             'slot_minutes' => 30,
             'location' => 'Room 204',
-        ])->assertRedirect(route('consultations.teacher'));
+        ])->assertRedirect(route('consultations.teacher.availability'));
 
         $availability = ConsultationAvailability::firstOrFail();
         $this->actingAs($student)->get(route('consultations.browse'))
@@ -53,7 +54,7 @@ class ConsultationSchedulingTest extends TestCase
         $this->actingAs($student)->get(route('consultations.dashboard'))
             ->assertOk()->assertSee('Dashboard')->assertSee($teacher->name)->assertSee('Course planning');
 
-        $this->actingAs($teacher)->get(route('consultations.teacher'))
+        $this->actingAs($teacher)->get(route('consultations.teacher.requests'))
             ->assertOk()->assertSee($student->name)->assertSee('Course planning');
     }
 

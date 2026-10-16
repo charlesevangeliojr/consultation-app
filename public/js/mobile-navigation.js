@@ -1,7 +1,8 @@
 (() => {
     function initializeNavigation(navigation) {
         if (navigation.dataset.initialized) return;
-        const links = [...navigation.querySelectorAll('[data-navigation-section]')];
+        const links = [...navigation.querySelectorAll('[data-navigation-section]')]
+            .filter(link => document.getElementById(link.dataset.navigationSection));
         if (!links.length) return;
         navigation.dataset.initialized = 'true';
         const controller = new AbortController();

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Create account · {{ $siteSettings->name ?: 'ConSync' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ asset('css/form-controls.css') }}">
 </head>
 <body class="grid min-h-screen place-items-center bg-slate-950 px-5 py-10 text-slate-100">
     <main class="w-full max-w-xl rounded-2xl border border-slate-800 bg-slate-900 p-7 shadow-2xl sm:p-9">

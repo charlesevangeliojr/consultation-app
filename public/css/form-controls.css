@@ -1,0 +1,35 @@
+/* One inset, vertically centered chevron for dropdowns across every portal. */
+html body select:not([multiple]):not([size]),
+html body select[size="1"]:not([multiple]),
+html body input[list] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    padding-inline-end: 40px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px 16px;
+}
+
+/* Keep the native suggestion hit target without drawing a second arrow. */
+html body input[list]::-webkit-calendar-picker-indicator { opacity: 0; }
+
+html[dir="rtl"] body select:not([multiple]):not([size]),
+html[dir="rtl"] body select[size="1"]:not([multiple]),
+html[dir="rtl"] body input[list] {
+    background-position: left 12px center;
+}
+
+/* Let the operating system draw controls in high contrast mode. */
+@media (forced-colors: active) {
+    html body select:not([multiple]):not([size]),
+    html body select[size="1"]:not([multiple]),
+    html body input[list] {
+        -webkit-appearance: auto;
+        -moz-appearance: auto;
+        appearance: auto;
+        background-image: none;
+    }
+    html body input[list]::-webkit-calendar-picker-indicator { opacity: 1; }
+}

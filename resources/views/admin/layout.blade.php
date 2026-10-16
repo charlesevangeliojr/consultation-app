@@ -13,10 +13,12 @@
     <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.12/dist/turbo.es2017-umd.js" defer></script>
     <link rel="stylesheet" href="{{ asset('css/mobile-navigation.css') }}">
     <script src="{{ asset('js/mobile-navigation.js') }}" defer></script>
+    <script src="{{ asset('js/mobile-account-menu.js') }}" defer data-turbo-eval="false"></script>
     @if (request()->routeIs('admin.accounts*', 'admin.roles.*'))
         <link rel="stylesheet" href="{{ asset('css/user-management.css') }}">
         <script src="{{ asset('js/user-management.js') }}" defer></script>
     @endif
+    <link rel="stylesheet" href="{{ asset('css/form-controls.css') }}">
 </head>
     <body @class(['has-mobile-navigation min-h-screen bg-slate-950 text-white antialiased', 'user-management' => request()->routeIs('admin.accounts*', 'admin.roles.*')])>
     <div class="min-h-screen lg:flex">
@@ -85,9 +87,10 @@
         </aside>
 
         <div class="min-w-0 flex-1">
-            <header class="flex items-center justify-between border-b border-slate-800 px-6 py-4 md:px-10">
+            <header class="mobile-topbar flex items-center justify-between border-b border-slate-800 px-6 py-4 md:px-10">
                 <h1 class="text-sm font-medium text-slate-300">@yield('title')</h1>
-                <span class="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-400">Administrator</span>
+                <span class="hidden rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-400 lg:inline">Administrator</span>
+                @include('partials.mobile-account-menu', ['mobileLogoutUrl' => route('admin.logout')])
             </header>
             @if(auth()->user()->canAccess('accounts', 'view') && request()->routeIs('admin.accounts*', 'admin.roles.*'))
                 <nav aria-label="User management navigation" class="flex gap-3 border-b border-slate-800 px-6 py-2 lg:hidden">
@@ -98,9 +101,6 @@
             <main class="mx-auto max-w-6xl px-6 py-10 md:px-10 md:py-12">
                 @yield('content')
             </main>
-            <div class="border-t border-slate-800 p-4 lg:hidden">
-                @include('admin.partials.account-dropdown')
-            </div>
         </div>
     </div>
     @php

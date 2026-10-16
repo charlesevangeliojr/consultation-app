@@ -26,5 +26,5 @@
             @else<div class="calendar-day-blank" aria-hidden="true"></div>@endif
         @endforeach
     </div>
-    <p class="mt-4 text-xs text-slate-400"><span class="text-sky-300">●</span> Dates with a dot have published sessions. Tap a date to view its slots and queue below. Times use {{ config('app.timezone') }}.</p>
+    <p class="mt-4 text-xs text-slate-400"><span class="text-sky-300">●</span> Dates with a dot have published sessions. Tap a date to view its schedule, slots, and queue. Times use {{ config('app.timezone') }}.</p>
 </section>

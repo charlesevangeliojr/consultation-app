@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\SchoolController;
 use App\Http\Controllers\ConsultationController;
 use App\Http\Controllers\StudentProfileController;
+use App\Http\Controllers\TeacherProfileController;
 use App\Http\Controllers\StudentDashboardController;
 use App\Models\ConsultationAvailability;
 use App\Models\User;
@@ -45,7 +46,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/register', [RegistrationController::class, 'create'])->name('register');
     Route::post('/register', [RegistrationController::class, 'store'])->middleware('throttle:5,1')->name('register.store');
 });
-Route::middleware('auth')->prefix('consultations')->name('consultations.')->group(function () {
+Route::middleware(['auth', \App\Http\Middleware\EnsureTeacherProfileComplete::class])->prefix('consultations')->name('consultations.')->group(function () {
     Route::get('/', [ConsultationController::class, 'home'])->name('home');
     Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('dashboard');
     Route::get('/browse', [ConsultationController::class, 'browse'])->name('browse');
@@ -53,6 +54,11 @@ Route::middleware('auth')->prefix('consultations')->name('consultations.')->grou
     Route::put('/student/profile', [StudentProfileController::class, 'update'])->name('student-profile.update');
     Route::post('/availability/{availability}/book', [ConsultationController::class, 'book'])->name('book');
     Route::get('/teacher', [ConsultationController::class, 'teacher'])->name('teacher');
+    Route::get('/teacher/requests', [ConsultationController::class, 'teacherRequests'])->name('teacher.requests');
+    Route::get('/teacher/availability', [ConsultationController::class, 'teacherAvailability'])->name('teacher.availability');
+    Route::get('/teacher/settings', [ConsultationController::class, 'teacherPreferences'])->name('teacher.preferences');
+    Route::get('/teacher/profile', [TeacherProfileController::class, 'edit'])->name('teacher-profile.edit');
+    Route::put('/teacher/profile', [TeacherProfileController::class, 'update'])->name('teacher-profile.update');
     Route::post('/teacher/availability', [ConsultationController::class, 'availability'])->name('availability.store');
     Route::put('/teacher/settings', [ConsultationController::class, 'teacherSettings'])->name('teacher.settings');
     Route::patch('/teacher/availability/{availability}/cancel', [ConsultationController::class, 'cancelAvailability'])->name('availability.cancel');

@@ -224,3 +224,19 @@
     border-color: #fb7185;
     background: rgb(244 63 94 / 12%);
 }
+/* Native dialog keeps the daily schedule above mobile navigation. */
+.calendar-schedule-open { overflow: hidden; }
+.calendar-schedule-dialog { position: fixed; inset: 0; width: min(600px, calc(100vw - 24px)); max-height: calc(100dvh - 32px); margin: auto; padding: 0; overflow-y: auto; overscroll-behavior: contain; border: 1px solid #334155; border-radius: 20px; background: #0f172a; color: #f1f5f9; box-shadow: 0 24px 80px rgb(0 0 0 / 50%); }
+.calendar-schedule-dialog::backdrop { background: rgb(2 6 23 / 82%); }
+.calendar-schedule-header { position: sticky; top: 0; z-index: 1; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px; border-bottom: 1px solid #334155; background: #0f172a; }
+.calendar-schedule-header > div { min-width: 0; }
+.calendar-schedule-header p { color: #fda4af; font-size: 10px; font-weight: 600; letter-spacing: .15em; }
+.calendar-schedule-header h2 { margin-top: 6px; font-size: 18px; font-weight: 600; overflow-wrap: anywhere; }
+.calendar-schedule-header button { width: 44px; height: 44px; flex-shrink: 0; border: 1px solid #334155; border-radius: 10px; color: #cbd5e1; font-size: 26px; }
+.calendar-schedule-header button:hover { background: #1e293b; }
+.calendar-schedule-content { display: grid; min-width: 0; gap: 12px; padding: 18px; overflow-wrap: anywhere; }
+.calendar-schedule-content > * { min-width: 0; }
+.calendar-schedule-content > a { color: #7dd3fc; min-height: 44px; }
+.calendar-schedule-dialog :where(button, input, a):focus-visible { outline: 2px solid #fb7185; outline-offset: 2px; }
+.calendar-schedule-content :where(input, button) { min-height: 44px; max-width: 100%; }
+.calendar-schedule-content input { min-width: 0; font-size: 16px; }

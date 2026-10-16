@@ -29,6 +29,54 @@
 .teacher-sidebar-navigation svg { width: 22px; height: 22px; flex-shrink: 0; }
 .teacher-sidebar-navigation a:focus-visible { outline: 2px solid #fb7185; outline-offset: 2px; }
 
+.teacher-sidebar-navigation { min-height: 0; overflow-y: auto; }
+.teacher-account-menu { position: relative; }
+.teacher-account-trigger {
+    display: flex;
+    min-width: 0;
+    min-height: 64px;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    list-style: none;
+}
+.teacher-account-trigger::-webkit-details-marker { display: none; }
+.teacher-account-trigger:hover,
+.teacher-account-menu[open] > summary { background: #1e293b; border-color: #334155; }
+.teacher-account-trigger.is-current { background: rgb(244 63 94 / 8%); border-color: rgb(244 63 94 / 25%); }
+.teacher-account-chevron { width: 18px; height: 18px; flex-shrink: 0; color: #94a3b8; }
+.teacher-account-menu[open] .teacher-account-chevron { transform: rotate(180deg); }
+.teacher-account-options {
+    position: absolute;
+    z-index: 40;
+    inset: auto 0 calc(100% + 8px);
+    padding: 8px;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    background: #0f172a;
+    box-shadow: 0 -8px 24px rgb(0 0 0 / 30%);
+}
+.teacher-account-options :where(a, button) {
+    display: flex;
+    width: 100%;
+    min-height: 44px;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #cbd5e1;
+    text-align: left;
+}
+.teacher-account-options :where(a, button):hover { background: #1e293b; }
+.teacher-account-options a[aria-current] { background: rgb(244 63 94 / 12%); color: #fda4af; }
+.teacher-account-options button { color: #fda4af; }
+.teacher-account-options svg { width: 20px; height: 20px; flex-shrink: 0; }
+.teacher-account-menu :where(summary, a, button):focus-visible { outline: 2px solid #fb7185; outline-offset: 2px; }
+
 @media (min-width: 1024px) {
     .teacher-sidebar {
         position: fixed;
@@ -37,7 +85,6 @@
         display: flex;
         width: 240px;
         flex-direction: column;
-        overflow-y: auto;
         border-right: 1px solid #1e293b;
         background: #0f172a;
     }
@@ -84,4 +131,31 @@
 .teacher-portal :where(a, button, input, select, textarea):focus-visible {
     outline: 2px solid #fb7185;
     outline-offset: 3px;
+}
+
+@media (max-width: 639px) {
+    .teacher-header-compact { gap: 12px; }
+    .teacher-header-compact > div > p:first-child { display: none; }
+    .teacher-header-compact h1 { margin-top: 0; font-size: 20px; line-height: 28px; }
+    .teacher-header-compact h1 + p { margin-top: 4px; font-size: 12px; line-height: 18px; }
+
+    .teacher-summary {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 16px;
+    }
+    .teacher-summary > div { min-width: 0; padding: 12px 8px; }
+    .teacher-summary dt { font-size: 11px; line-height: 16px; }
+    .teacher-summary dd { margin-top: 4px; font-size: 22px; line-height: 28px; }
+    .teacher-summary-link {
+        position: absolute;
+        inset: 0;
+        justify-content: flex-end;
+        align-items: flex-end;
+        margin: 0;
+        padding: 12px 8px;
+        border-radius: 12px;
+        text-decoration: none;
+    }
+    .teacher-summary + section { margin-top: 20px; }
 }

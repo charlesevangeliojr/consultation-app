@@ -16,12 +16,13 @@ use Tests\TestCase;
 class SchoolConsultationWorkflowTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Concerns\CreatesCompleteTeacherProfiles;
 
     private function account(string $roleName): User
     {
         $role = Role::firstOrCreate(['name' => $roleName], ['is_super_admin' => $roleName === 'Super Admin']);
         $user = User::factory()->create(['role_id' => $role->id]);
-        if ($user->isTeacher()) $user->teacher()->create();
+        if ($user->isTeacher()) $this->createCompleteTeacherProfile($user);
         if ($user->isStudent()) $user->student()->create();
         return $user;
     }

@@ -13,12 +13,13 @@ use Tests\TestCase;
 class TeacherCalendarTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Concerns\CreatesCompleteTeacherProfiles;
 
     private function teacher(): User
     {
         $role = Role::firstOrCreate(['name' => 'Teacher'], ['is_super_admin' => false]);
         $teacher = User::factory()->create(['role_id' => $role->id]);
-        $teacher->teacher()->create(['consultation_approved' => true]);
+        $this->createCompleteTeacherProfile($teacher, ['consultation_approved' => true]);
         return $teacher;
     }
 
@@ -135,13 +136,20 @@ class TeacherCalendarTest extends TestCase
 
     public function test_desktop_teacher_workspace_has_a_sidebar_and_preserves_the_selected_month(): void
     {
-        $this->actingAs($this->teacher())->get(route('consultations.teacher', ['month' => '2026-11']))
+        $response = $this->actingAs($this->teacher())->get(route('consultations.teacher', ['month' => '2026-11']))
             ->assertOk()->assertSee('November 2026')
             ->assertSee('aria-label="Teacher desktop navigation"', false)
             ->assertSee('id="teacher-workspace"', false)
-            ->assertSee('My calendar')->assertSee('Consultation settings')
-            ->assertSee('month=2026-11#teacher-settings', false)
+            ->assertSee('My calendar')
             ->assertSee('Teacher mobile navigation');
+        $this->assertSame(1, preg_match('/<nav\b[^>]*aria-label="Teacher desktop navigation"[^>]*>(.*?)<\/nav>/s', $response->getContent(), $matches));
+        $this->assertStringContainsString('month=2026-11', $matches[1]);
+        $this->assertStringContainsString('aria-current="page"', $matches[1]);
+        foreach (['teacher-requests', 'teacher-publish', 'teacher-settings'] as $section) {
+            $this->assertStringNotContainsString('data-navigation-section="'.$section.'"', $matches[1]);
+            $response->assertDontSee('id="'.$section.'"', false);
+        }
+        $response->assertDontSee('Save preferences')->assertDontSee('Publish times');
     }
 
     public function test_calendar_day_indicators_show_status_counts_and_ignore_cancelled_or_rejected_bookings(): void

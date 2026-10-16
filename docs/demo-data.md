@@ -25,6 +25,17 @@ Filipino, uses 20-minute slots, automatically confirms bookings, and shows queue
 names. Angela handles Computer Studies and awaits admin consultation approval.
 School-wide privacy settings still override teacher preferences.
 
+Teachers now have a required profile-setup step. After importing or seeding,
+sign in as a demo teacher and complete the required personal details and upload
+a JPG, PNG, or WebP profile picture (up to 2 MB) and describe the support offered
+to students. There is no subject-selection step in the profile. Phone numbers use a country-code
+dropdown; addresses use the same suggestion-assisted fields as student registration.
+Use fictional details for these
+demo accounts. The existing SQL snapshot does not include teacher contact details
+or photos, so the setup page appears before the calendar. Completing a profile
+does not change admin-managed consultation approval or existing subject assignments.
+Teachers may update their consultation description without admin confirmation.
+
 ## Included sample data
 
 - Grades 10, 11, and 12, with two sections each: Newton/Galileo,
