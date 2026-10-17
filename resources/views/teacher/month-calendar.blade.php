@@ -81,7 +81,7 @@
                 <div class="calendar-agenda-list">@forelse($dayAvailability as $period)
                     <article class="rounded-xl border border-slate-800 bg-slate-950 p-4">
                         <p class="text-sm font-semibold">{{ \Illuminate\Support\Carbon::parse($period->starts_at)->format('g:i A') }}–{{ \Illuminate\Support\Carbon::parse($period->ends_at)->format('g:i A') }}</p>
-                        <p class="mt-1 text-xs text-slate-400">{{ $period->slot_minutes }} minute slots @if($period->location) · {{ $period->location }} @endif</p>
+                        <p class="mt-1 text-xs text-slate-400">Up to {{ $profile->max_consultation_minutes }} minutes per consultation @if($period->location) · {{ $period->location }} @endif</p>
                     </article>
                 @empty<p class="rounded-lg border border-dashed border-slate-700 p-4 text-sm text-slate-500">No availability published for this date.</p>@endforelse</div>
             </div>
@@ -94,7 +94,7 @@
                             <span @class(['rounded-full px-2.5 py-1 text-[10px] font-semibold capitalize', 'bg-amber-400/10 text-amber-200' => $booking->status === 'pending', 'bg-emerald-400/10 text-emerald-200' => $booking->status === 'confirmed', 'bg-slate-800 text-slate-300' => $booking->status === 'completed'])>{{ $booking->status }}</span>
                         </div>
                         <p class="mt-2 text-sm text-slate-300">{{ $booking->student->name }}</p>
-                        @if($booking->availability->location)<p class="mt-1 text-xs text-slate-400">{{ $booking->availability->location }}</p>@endif
+                        @if($booking->availability?->location)<p class="mt-1 text-xs text-slate-400">{{ $booking->availability->location }}</p>@endif
                         @if($booking->topic)<p class="mt-2 break-words text-xs text-slate-400">{{ $booking->topic }}</p>@endif
                     </article>
                 @empty<p class="rounded-lg border border-dashed border-slate-700 p-4 text-sm text-slate-500">No consultations scheduled for this date.</p>@endforelse</div>

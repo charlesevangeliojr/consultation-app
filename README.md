@@ -16,6 +16,44 @@ queue privacy, cancellation rules, and verification commands.
 For sample accounts and a MySQL/MariaDB data snapshot, see
 [Demo credentials and SQL import](docs/demo-data.md).
 
+### Local setup and running the app
+
+Run these commands from the project directory after installing dependencies and
+configuring your database connection in `.env`.
+
+Apply database migrations and run the default seeder:
+
+```sh
+php artisan migrate --seed
+```
+
+To also create fictional demo accounts and consultation records (optional,
+development/testing only):
+
+```sh
+php artisan db:seed --class=DemoConsultationSeeder
+```
+
+See [Demo credentials and SQL import](docs/demo-data.md) for the demo login details.
+These commands do not reset the database. Avoid `migrate:fresh` on a database
+containing records you want to keep.
+
+Start the local development server:
+
+```sh
+php artisan serve
+```
+
+Open **http://127.0.0.1:8000**. Student and teacher login is at `/portal/login`;
+administrator login is at `/admin/login`.
+
+In a separate terminal, keep the scheduler running so unanswered proposed-time
+requests are automatically rejected when their requested start time arrives:
+
+```sh
+php artisan schedule:work
+```
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

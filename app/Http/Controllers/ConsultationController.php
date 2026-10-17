@@ -6,6 +6,7 @@ use App\Models\ConsultationAppointment;
 use App\Models\ConsultationAvailability;
 use App\Models\User;
 use App\Models\SiteSetting;
+use App\Support\ProposedConsultationRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -55,42 +56,63 @@ class ConsultationController extends Controller
         $selectedTeacher = request()->integer('teacher') ? $teachers->firstWhere('id', request()->integer('teacher')) : $teachers->first();
         abort_if(request()->integer('teacher') && ! $selectedTeacher, 404);
         $availability = $selectedTeacher ? ConsultationAvailability::query()->where('teacher_id', $selectedTeacher->id)->whereNull('cancelled_at')->whereDate('date', '>=', today())->with('appointments.student')->orderBy('date')->orderBy('starts_at')->get() : collect();
-        $bookedSlots = $availability->flatMap(function ($period) {
-            return $period->appointments->whereNotIn('status', ['cancelled', 'rejected'])->map(fn ($appointment) => $appointment->starts_at->format('Y-m-d H:i'));
-        })->all();
+        $studentBookings = ConsultationAppointment::where('student_id', request()->user()->id)
+            ->whereNotIn('status', ['cancelled', 'rejected'])->where('ends_at', '>', now())
+            ->orderBy('starts_at')->get(['starts_at', 'ends_at']);
+        $teacherBookings = $selectedTeacher ? ConsultationAppointment::where('teacher_id', $selectedTeacher->id)
+            ->reservesTeacherTime()->where('ends_at', '>', now())->get(['starts_at', 'ends_at']) : collect();
 
         $showStudentNames = $selectedTeacher?->teacher?->queueNamesVisible(SiteSetting::current()) ?? false;
         $monthInput = request()->validate(['month' => ['nullable', 'date_format:Y-m']]);
         $month = isset($monthInput['month']) ? Carbon::createFromFormat('!Y-m', $monthInput['month'])->startOfMonth() : now()->startOfMonth();
 
-        return view('student.browse', compact('teachers', 'selectedTeacher', 'availability', 'bookedSlots', 'showStudentNames', 'month'));
+        return view('student.browse', compact('teachers', 'selectedTeacher', 'availability', 'studentBookings', 'teacherBookings', 'showStudentNames', 'month'));
     }
 
     public function book(Request $request, ConsultationAvailability $availability): RedirectResponse
     {
         $this->requireRole('student');
-        $data = $request->validate(['starts_at' => ['required', 'date', 'after:now'], 'topic' => ['required', 'string', 'max:500']]);
+        // Native time controls post H:i. Also accept explicit school-timezone
+        // datetimes for API callers; every range is checked against the period.
+        foreach (['starts_at', 'ends_at'] as $field) {
+            $value = $request->input($field);
+            if (is_string($value) && preg_match('/^\d{2}:\d{2}$/', $value)) {
+                $request->merge([$field => $availability->date->toDateString().' '.$value]);
+            }
+        }
+        $data = $request->validate([
+            'starts_at' => ['required', 'date_format:Y-m-d H:i,Y-m-d H:i:s', 'after:now'],
+            'ends_at' => ['required', 'date_format:Y-m-d H:i,Y-m-d H:i:s', 'after:starts_at'],
+            'topic' => ['required', 'string', 'max:500'],
+        ]);
         $start = Carbon::parse($data['starts_at']);
+        $end = Carbon::parse($data['ends_at']);
 
-        DB::transaction(function () use ($request, $availability, $start, $data) {
+        DB::transaction(function () use ($request, $availability, $start, $end, $data) {
             $teacher = User::whereKey($availability->teacher_id)->lockForUpdate()->firstOrFail();
             User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
             abort_unless($teacher->isTeacher() && $teacher->teacher?->consultation_approved, 403, 'This teacher is not approved for consultations.');
             $period = ConsultationAvailability::query()->whereKey($availability->id)->lockForUpdate()->firstOrFail();
             abort_if($period->cancelled_at, 422, 'This availability has been cancelled.');
-            $end = $start->copy()->addMinutes($period->slot_minutes);
+            if (! $start->isFuture()) {
+                throw ValidationException::withMessages(['starts_at' => 'Choose a consultation time in the future.']);
+            }
             abort_unless($period->date->isFuture() || $period->date->isToday(), 422, 'This consultation period has passed.');
             $periodStart = Carbon::parse($period->date->toDateString().' '.$period->starts_at);
             $periodEnd = Carbon::parse($period->date->toDateString().' '.$period->ends_at);
-            if ($start->lt($periodStart) || $end->gt($periodEnd) || $periodStart->diffInMinutes($start) % $period->slot_minutes !== 0) {
+            if ($start->lt($periodStart) || $end->gt($periodEnd) || $start->second !== 0 || $end->second !== 0) {
                 throw ValidationException::withMessages(['starts_at' => 'Choose a valid time within the teacher’s published availability.']);
             }
-            $conflict = ConsultationAppointment::query()->where('teacher_id', $period->teacher_id)->whereNotIn('status', ['cancelled', 'rejected'])->where('starts_at', '<', $end)->where('ends_at', '>', $start)->lockForUpdate()->exists();
+            $maximum = $teacher->teacher->max_consultation_minutes;
+            if ($start->diffInMinutes($end) > $maximum) {
+                throw ValidationException::withMessages(['ends_at' => "This teacher allows a maximum of {$maximum} minutes per consultation. Choose a shorter time range."]);
+            }
+            $conflict = ConsultationAppointment::query()->where('teacher_id', $period->teacher_id)->reservesTeacherTime()->where('starts_at', '<', $end)->where('ends_at', '>', $start)->lockForUpdate()->exists();
             if ($conflict) throw ValidationException::withMessages(['starts_at' => 'That time was just booked. Please select another available time.']);
             $studentConflict = ConsultationAppointment::where('student_id', $request->user()->id)->whereNotIn('status', ['cancelled', 'rejected'])->where('starts_at', '<', $end)->where('ends_at', '>', $start)->exists();
             if ($studentConflict) throw ValidationException::withMessages(['starts_at' => 'You already have a consultation at this time.']);
 
-            ConsultationAppointment::create([
+            $booking = ConsultationAppointment::create([
                 'availability_id' => $period->id,
                 'teacher_id' => $period->teacher_id,
                 'student_id' => $request->user()->id,
@@ -99,9 +121,43 @@ class ConsultationController extends Controller
                 'topic' => $data['topic'] ?? null,
                 'status' => $teacher->teacher->auto_approve_bookings ? 'confirmed' : 'pending',
             ]);
+            if ($booking->status === 'confirmed') ProposedConsultationRequests::rejectOverlapping($booking);
         });
 
         return redirect()->route('consultations.browse', ['teacher' => $availability->teacher_id])->with('status', 'Consultation request added to the teacher’s queue.');
+    }
+
+    public function requestTime(Request $request, User $teacher): RedirectResponse
+    {
+        $this->requireRole('student');
+        $data = $request->validate([
+            'date' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
+            'starts_at' => ['required', 'date_format:H:i'],
+            'ends_at' => ['required', 'date_format:H:i', 'after:starts_at'],
+            'topic' => ['required', 'string', 'max:500'],
+        ]);
+        $start = Carbon::parse($data['date'].' '.$data['starts_at']);
+        $end = Carbon::parse($data['date'].' '.$data['ends_at']);
+        DB::transaction(function () use ($request, $teacher, $data, $start, $end) {
+            $teacher = User::whereKey($teacher->id)->lockForUpdate()->firstOrFail();
+            User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
+            abort_unless($teacher->isTeacher() && $teacher->teacher?->consultation_approved, 403, 'This teacher is not approved for consultations.');
+            if (! $start->isFuture()) throw ValidationException::withMessages(['starts_at' => 'Choose a consultation time in the future.']);
+            $maximum = $teacher->teacher->max_consultation_minutes;
+            if ($start->diffInMinutes($end) > $maximum) throw ValidationException::withMessages(['ends_at' => "This teacher allows a maximum of {$maximum} minutes per consultation."]);
+            if (ConsultationAppointment::where('teacher_id', $teacher->id)->reservesTeacherTime()->where('starts_at', '<', $end)->where('ends_at', '>', $start)->exists()) {
+                throw ValidationException::withMessages(['starts_at' => 'This teacher already has a reserved consultation at this time.']);
+            }
+            if (ConsultationAppointment::where('student_id', $request->user()->id)->whereNotIn('status', ['cancelled', 'rejected'])->where('starts_at', '<', $end)->where('ends_at', '>', $start)->exists()) {
+                throw ValidationException::withMessages(['starts_at' => 'You already have a consultation or request at this time.']);
+            }
+            ConsultationAppointment::create([
+                'teacher_id' => $teacher->id, 'student_id' => $request->user()->id,
+                'starts_at' => $start, 'ends_at' => $end, 'topic' => $data['topic'],
+                'status' => 'pending', 'is_proposed' => true,
+            ]);
+        });
+        return redirect()->route('consultations.dashboard')->with('status', 'Proposed time sent. The teacher must accept it before the requested start time.');
     }
 
     public function teacher(): View
@@ -171,19 +227,16 @@ class ConsultationController extends Controller
             'date' => ['required', 'date', 'after_or_equal:today'],
             'starts_at' => ['required', 'date_format:H:i'],
             'ends_at' => ['required', 'date_format:H:i', 'after:starts_at'],
-            'slot_minutes' => ['sometimes', 'integer', 'min:5', 'max:240'],
             'location' => ['nullable', 'string', 'max:120'],
         ]);
         DB::transaction(function () use ($request, $data) {
             $teacher = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
             abort_unless($teacher->teacher?->consultation_approved, 403, 'An administrator must approve your consultation permission first.');
-            $data['slot_minutes'] = $data['slot_minutes'] ?? $teacher->teacher->slot_minutes;
+            // Retain the legacy column for historical data, not fixed slots.
+            $data['slot_minutes'] = $teacher->teacher->max_consultation_minutes;
             $start = Carbon::parse($data['date'].' '.$data['starts_at']);
             $end = Carbon::parse($data['date'].' '.$data['ends_at']);
             if (! $start->isFuture()) throw ValidationException::withMessages(['starts_at' => 'Availability must start in the future.']);
-            if ($start->diffInMinutes($end) < $data['slot_minutes'] || $start->diffInMinutes($end) % $data['slot_minutes'] !== 0) {
-                throw ValidationException::withMessages(['ends_at' => 'The consultation window must fit complete appointment slots.']);
-            }
             $overlap = ConsultationAvailability::query()->where('teacher_id', $teacher->id)->whereNull('cancelled_at')->whereDate('date', $data['date'])->where('starts_at', '<', $data['ends_at'])->where('ends_at', '>', $data['starts_at'])->exists();
             if ($overlap) throw ValidationException::withMessages(['date' => 'This time overlaps another availability window you published.']);
             ConsultationAvailability::create(['teacher_id' => $teacher->id] + $data);
@@ -198,21 +251,28 @@ class ConsultationController extends Controller
         $data = $request->validate(['status' => ['required', 'in:confirmed,rejected,completed,cancelled']]);
         DB::transaction(function () use ($request, $appointment, $data) {
             $teacher = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
-            $period = ConsultationAvailability::whereKey($appointment->availability_id)->lockForUpdate()->firstOrFail();
+            User::whereKey($appointment->student_id)->lockForUpdate()->firstOrFail();
+            $period = $appointment->availability_id ? ConsultationAvailability::whereKey($appointment->availability_id)->lockForUpdate()->firstOrFail() : null;
             $booking = ConsultationAppointment::whereKey($appointment->id)->lockForUpdate()->firstOrFail();
             $allowed = match ($booking->status) {
                 'pending' => ['confirmed', 'rejected', 'cancelled'],
                 'confirmed' => ['completed', 'cancelled'],
                 default => [],
             };
-            if (! in_array($data['status'], $allowed, true) || $period->cancelled_at) {
+            if (! in_array($data['status'], $allowed, true) || $period?->cancelled_at) {
                 throw ValidationException::withMessages(['status' => 'This booking can no longer be changed to that status.']);
             }
             if ($data['status'] === 'confirmed') {
                 abort_unless($teacher->teacher?->consultation_approved, 403, 'Your consultation permission is not approved.');
                 if (! $booking->starts_at->isFuture()) throw ValidationException::withMessages(['status' => 'A past booking cannot be confirmed.']);
+                $teacherConflict = ConsultationAppointment::where('teacher_id', $teacher->id)->where('id', '!=', $booking->id)->reservesTeacherTime()
+                    ->where('starts_at', '<', $booking->ends_at)->where('ends_at', '>', $booking->starts_at)->exists();
+                $studentConflict = ConsultationAppointment::where('student_id', $booking->student_id)->where('id', '!=', $booking->id)->whereNotIn('status', ['cancelled', 'rejected'])
+                    ->where('starts_at', '<', $booking->ends_at)->where('ends_at', '>', $booking->starts_at)->exists();
+                if ($teacherConflict || $studentConflict) throw ValidationException::withMessages(['status' => 'This time now overlaps another consultation.']);
             }
             $booking->update($data);
+            if ($booking->status === 'confirmed') ProposedConsultationRequests::rejectOverlapping($booking);
         });
         return redirect()->route('consultations.teacher.requests')->with('status', 'Consultation status updated.');
     }
@@ -221,13 +281,17 @@ class ConsultationController extends Controller
     {
         $this->requireRole('teacher');
         $data = $request->validate([
-            'slot_minutes' => ['required', 'integer', 'min:5', 'max:240'],
+            'max_consultation_minutes' => ['required', 'integer', 'in:30,60'],
             'auto_approve_bookings' => ['required', 'boolean'],
             'show_student_names' => ['required', 'boolean'],
         ]);
-        $request->user()->teacher()->updateOrCreate([], $data);
+        DB::transaction(function () use ($request, $data) {
+            // Serialize limit changes with booking validation for this teacher.
+            User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
+            $request->user()->teacher()->updateOrCreate([], $data);
+        });
 
-        return redirect()->route('consultations.teacher.preferences')->with('status', 'Consultation preferences saved. Duration applies to new availability; existing bookings are unchanged.');
+        return redirect()->route('consultations.teacher.preferences')->with('status', 'Consultation preferences saved. The time limit applies to new bookings; existing bookings are unchanged.');
     }
 
     public function cancelAvailability(Request $request, ConsultationAvailability $availability): RedirectResponse
@@ -251,7 +315,7 @@ class ConsultationController extends Controller
         abort_unless($appointment->student_id === $request->user()->id, 404);
         DB::transaction(function () use ($appointment) {
             User::whereKey($appointment->teacher_id)->lockForUpdate()->firstOrFail();
-            ConsultationAvailability::whereKey($appointment->availability_id)->lockForUpdate()->firstOrFail();
+            if ($appointment->availability_id) ConsultationAvailability::whereKey($appointment->availability_id)->lockForUpdate()->firstOrFail();
             $booking = ConsultationAppointment::whereKey($appointment->id)->lockForUpdate()->firstOrFail();
             if (! in_array($booking->status, ['pending', 'confirmed'], true) || ! $booking->starts_at->isFuture()) {
                 throw ValidationException::withMessages(['booking' => 'Only upcoming pending or confirmed bookings can be cancelled.']);

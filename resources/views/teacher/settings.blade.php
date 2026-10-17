@@ -1,14 +1,15 @@
 @extends('layouts.consultations')
 @section('title', 'Consultation settings')
 @section('content')
-    @include('teacher.partials.page-header', ['heading' => 'Consultation settings', 'description' => 'Set defaults for new availability, booking approval, and student queue privacy.'])
+    @include('teacher.partials.page-header', ['heading' => 'Consultation settings', 'description' => 'Set the student time limit, booking approval, and student queue privacy.'])
     <section id="teacher-settings" class="mt-6 max-w-3xl rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-6" aria-label="Consultation preferences">
         <form method="POST" action="{{ route('consultations.teacher.settings') }}" class="space-y-6">
             @csrf @method('PUT')
             <div>
-                <label for="default-slot-minutes" class="mb-2 block text-sm font-medium">Default slot duration (minutes)</label>
-                <input id="default-slot-minutes" name="slot_minutes" type="number" required min="5" max="240" value="{{ old('slot_minutes', $profile->slot_minutes) }}" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3">
-                <p class="mt-2 text-xs leading-5 text-slate-400">Between 5 and 240 minutes. This default is copied into new availability windows; existing slots never change.</p>
+                <label for="max-consultation-minutes" class="mb-2 block text-sm font-medium">Maximum time per student consultation</label>
+                <select id="max-consultation-minutes" name="max_consultation_minutes" required class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3">@foreach([30 => '30 minutes', 60 => '1 hour'] as $minutes => $label)<option value="{{ $minutes }}" @selected((int) old('max_consultation_minutes', $profile->max_consultation_minutes) === $minutes)>{{ $label }}</option>@endforeach</select>
+                <p class="mt-2 text-xs leading-5 text-slate-400">Students choose a start and end time within your published availability, up to this limit per booking. Changes apply to new requests, including existing availability windows. Existing bookings keep their times.</p>
+                @error('max_consultation_minutes')<p class="mt-2 text-sm text-rose-300">{{ $message }}</p>@enderror
             </div>
             <div>
                 <label for="auto-approve" class="mb-2 block text-sm font-medium">Booking approval</label>

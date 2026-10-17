@@ -3,12 +3,14 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Admin login · {{ config('app.name') }}</title>
+    <title>Admin login · {{ $siteSettings->name ?: config('app.name', 'Consultation') }}</title>
+    @if($siteSettings->favicon_path)<link rel="icon" href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($siteSettings->favicon_path) }}">@endif
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="{{ asset('js/password-visibility.js') }}" defer></script>
 </head>
-<body class="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-white">
+<body class="flex min-h-screen items-center justify-center bg-slate-950 px-6 py-8 text-white">
     <main class="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl">
+        @include('auth.partials.login-brand')
         <p class="text-sm font-semibold uppercase tracking-[0.25em] text-rose-400">Administration</p>
         <h1 class="mt-3 text-3xl font-bold">Sign in</h1>
         <p class="mt-2 text-slate-400">Use an administrator account to continue.</p>

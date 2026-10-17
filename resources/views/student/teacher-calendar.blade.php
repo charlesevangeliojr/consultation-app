@@ -4,7 +4,7 @@
     $cellCount = (int) (ceil(($offset + $calendarStart->daysInMonth) / 7) * 7);
     $dates = $availability->pluck('date')->map(fn ($date) => $date->toDateString())->unique()->all();
 @endphp
-<section id="student-teacher-calendar" class="responsive-calendar calendar-mini mt-6 min-w-0 max-w-2xl rounded-2xl border border-slate-800 bg-slate-900 p-3 sm:p-5" aria-label="Teacher availability calendar">
+<section id="student-teacher-calendar" class="student-card responsive-calendar calendar-mini mt-5 min-w-0 p-3 sm:p-5" aria-label="Teacher availability calendar">
     <h3 class="mb-3 text-sm font-semibold">Choose a consultation date</h3>
     <div class="calendar-toolbar">
         <a href="{{ route('consultations.browse', ['teacher' => $selectedTeacher->id, 'month' => $month->copy()->subMonth()->format('Y-m')]) }}#student-teacher-calendar" aria-label="Previous month" class="calendar-navigation rounded-lg border border-slate-700">←</a>
@@ -26,5 +26,5 @@
             @else<div class="calendar-day-blank" aria-hidden="true"></div>@endif
         @endforeach
     </div>
-    <p class="mt-4 text-xs text-slate-400"><span class="text-sky-300">●</span> Dates with a dot have published sessions. Tap a date to view its schedule, slots, and queue. Times use {{ config('app.timezone') }}.</p>
+    <p class="mt-4 text-xs text-slate-400"><span class="text-sky-300">●</span> Dates with a dot have published sessions. Tap a date to choose your time and view the queue. Times use {{ config('app.timezone') }}.</p>
 </section>

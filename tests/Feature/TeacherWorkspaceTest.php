@@ -99,7 +99,7 @@ class TeacherWorkspaceTest extends TestCase
         $booking = $this->booking($period);
         $this->patch(route('consultations.appointments.update', $booking), ['status' => 'confirmed'])
             ->assertRedirect(route('consultations.teacher.requests'));
-        $this->put(route('consultations.teacher.settings'), ['slot_minutes' => 20, 'auto_approve_bookings' => 1, 'show_student_names' => 0])
+        $this->put(route('consultations.teacher.settings'), ['max_consultation_minutes' => 30, 'auto_approve_bookings' => 1, 'show_student_names' => 0])
             ->assertRedirect(route('consultations.teacher.preferences'));
         $this->patch(route('consultations.availability.cancel', $period))
             ->assertRedirect(route('consultations.teacher.availability'));
@@ -113,8 +113,8 @@ class TeacherWorkspaceTest extends TestCase
             'date' => today()->addDay()->toDateString(), 'starts_at' => '11:00', 'ends_at' => '09:00', 'location' => 'Keep my location',
         ])->assertRedirect(route('consultations.teacher.availability'))->assertSessionHasErrors('ends_at')
             ->assertSessionHasInput('location', 'Keep my location');
-        $this->from(route('consultations.teacher.preferences'))->put(route('consultations.teacher.settings'), ['slot_minutes' => 1])
-            ->assertRedirect(route('consultations.teacher.preferences'))->assertSessionHasErrors('slot_minutes');
+        $this->from(route('consultations.teacher.preferences'))->put(route('consultations.teacher.settings'), ['max_consultation_minutes' => 1])
+            ->assertRedirect(route('consultations.teacher.preferences'))->assertSessionHasErrors('max_consultation_minutes');
     }
 
     public function test_non_teachers_cannot_access_workspace_pages_and_unapproved_teachers_cannot_publish(): void

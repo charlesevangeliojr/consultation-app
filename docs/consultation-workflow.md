@@ -108,12 +108,16 @@ uses `dashboard` view permission.
   and a rose outline marks the selected date. The legend and date tooltips explain
   every marker; empty months explain why no date indicators are displayed.
 - Register with one or more admin-defined subjects; approval is initially off.
-- Set default duration (5–240 minutes), automatic/manual booking approval, and
+- Set the maximum time per consultation (**30 minutes or 1 hour**), automatic/manual booking approval, and
   student-name visibility in **Consultation settings**.
-- Once approved, publish a future date, start/end time, location, and slot duration.
-  Availability must contain complete slots and must not overlap another active
-  window. Each window retains its duration even if defaults change later.
-- Manual bookings reserve slots as pending; automatic bookings are confirmed.
+- Once approved, publish a future date, start/end time, and location. Availability
+  must not overlap another active window, but need not fit fixed-size slots.
+  Students choose a start and end time within the window at whole-minute precision.
+  Each request must be at least one minute and no longer than the teacher's current
+  maximum. Limit changes apply to new requests in all active windows; existing
+  appointments retain their saved start and end times. The legacy `slot_minutes`
+  columns are retained for historical data, not used as booking alignment rules.
+- Manual bookings reserve the requested range as pending; automatic bookings are confirmed.
   Changing approval preference affects new bookings only.
 - Review the time-ordered queue and confirm/reject requests, complete confirmed
   consultations, or cancel a confirmed booking.
@@ -124,10 +128,50 @@ uses `dashboard` view permission.
 ## Student workflow
 
 - Register with a grade and a section belonging to that grade.
-- Browse approved teachers, their subjects, monthly calendar, available slots,
+- Browse approved teachers, their subjects, monthly calendar, available time ranges,
   and time-ordered queues. Enter a required consultation reason when booking.
-- Slots must be future, aligned to the teacher's duration, and within availability.
-  The app checks teacher and student appointment conflicts inside transactions.
+- Select **Start time** and **End time**, with duration no longer than the teacher's
+  30- or 60-minute maximum. For example, 1:00–2:00 PM is valid inside a 1:00–5:00 PM
+  window when the teacher's maximum is one hour. Shorter and non-aligned ranges
+  are allowed. End time must be after start time and stay within the window.
+  Available ranges exclude the teacher's reservations and the signed-in student's
+  reservations with other teachers. Client validation is advisory; the server
+  locks teacher/student accounts and rechecks all time bounds, duration, permission,
+  cancellations, and overlap inside the transaction. Pending/confirmed (and other
+  non-cancelled/non-rejected) bookings reserve their full ranges. A student may
+  consult multiple teachers, but cannot overlap them. Back-to-back bookings are allowed.
+- **Request another time** allows a student to propose a date/start/end even when
+  the approved teacher has no published availability. The same current duration
+  maximum applies. These requests always start pending and require manual teacher
+  approval, even when automatic approval is enabled for published sessions.
+  Students cannot overlap their own pending proposals or other bookings across
+  teachers. Different students may propose the same unreserved teacher time;
+  proposals alone do not reserve teacher time. Published-session reservations do.
+- Accepting a proposal or confirming a published booking immediately rejects
+  overlapping pending proposals with a `time_taken` reason. Adjacent proposals
+  remain unchanged. Unanswered proposals are rejected at their start time with
+  an `expired` reason. Reasons appear in student history and teacher requests.
+  Accepted proposals appear in the existing calendars without creating a public
+  availability window or exposing private consultation reasons to other students.
+
+### Automatic proposed-request rejection
+
+Run Laravel's scheduler in deployment so expiry runs even without portal traffic:
+
+```sh
+php artisan schedule:work
+```
+
+Alternatively, configure cron/Windows Task Scheduler to run
+`php artisan schedule:run` every minute from the project directory. The scheduled
+`consultations:reject-stale-requests` command runs every minute with overlap
+protection. Portal and monitoring requests also reconcile stale proposals before
+rendering. Scheduled expiry is minute-granular; acceptance always rechecks the
+exact start time and conflicts transactionally. To reconcile manually:
+
+```sh
+php artisan consultations:reject-stale-requests
+```
 - View pending/confirmed bookings and booking history in the dashboard.
 - Cancel an upcoming pending/confirmed booking to free its slot. To change time,
   cancel and book again; there is no reschedule action.
@@ -200,6 +244,34 @@ Escape returns focus to the avatar. Desktop account controls are unchanged.
 The mobile top bar is fixed to the top of the viewport while scrolling, with
 safe-area and page-content clearance so it does not cover the page heading.
 
+The student workspace shares the teacher portal's full-width desktop shell,
+240px sidebar, card palette, section headings, and bottom account dropdown.
+Desktop navigation contains Dashboard and Calendar; My profile and Sign out
+are in the account menu, while all three student destinations remain in the
+mobile bottom dock. Dashboard summary cards reflect scheduled days in the
+current month, the next consultations shown (up to six), and total history.
+Below 640px, the student dashboard summary matches the teacher dashboard:
+three compact cards in one row, short Days/Upcoming/History labels, no leading
+icons, and sky/green/amber values. Larger screens retain the full labels and icons.
+The booking page places teacher details/calendar beside session cards on wide
+screens and stacks them on mobile. Session forms retain required private
+reasons, automatic/manual approval, and the existing queue privacy policy.
+
+The student profile uses separate photo/school information and personal/address
+cards, a sticky save bar, and an unsaved-changes indicator. School assignments
+and name remain admin-managed. Students can crop an optional photo locally
+before saving a 512×512 JPEG; cancellation keeps the previous selection.
+Other student field requirements and server-side validation are unchanged.
+Student addresses now have Region, Province, City/Municipality, Barangay,
+House/Unit, and Postal code fields using the same hierarchical suggestions as
+teacher profiles. Updating any address field requires region, city, and barangay;
+province, house/unit, and postal code remain optional. A saved structured address
+must remain complete. Manual entry is supported offline. The combined address is
+composed when the structured fields are saved; legacy combined addresses are
+shown read-only and preserved when unrelated details are edited.
+Profile scripts are registered on workspace entry so photo controls also work
+after Turbo navigation rather than only after a full page reload.
+
 On mobile (below 1024px), tapping a teacher calendar date opens its daily
 availability and consultations in a scrollable schedule modal without leaving
 the month. Student published dates open all of that day's session cards, slots,
@@ -221,6 +293,6 @@ rather than assuming viewport width equals available width. Months render only
 the four, five, or six rows required. All date navigation still works without JS.
 
 Run `php artisan test`. Workflow tests cover registration catalogs, teacher
-permission, teacher-only booking approval, duration snapshots, privacy overrides,
-queue order, cancellation/rebooking, history, invalid slots, and conflicts.
+permission, teacher-only booking approval, chosen-time duration limits, privacy overrides,
+queue order, cancellation/rebooking, history, invalid ranges, and conflicts.
 Run `node --test tests/js/registration.test.cjs` for registration step validation.

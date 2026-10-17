@@ -14,7 +14,7 @@ async function run() {
         for (const role of ['teacher', 'student', 'admin']) {
             const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
             const page = await context.newPage();
-            if (role === 'teacher') {
+            if (role === 'teacher' || role === 'student') {
                 await page.route('https://psgc.gitlab.io/api/**', route => {
                     const url = new URL(route.request().url());
                     let locations = [];
@@ -292,6 +292,21 @@ async function run() {
                         dockWidth: nav.querySelector('.mobile-navigation-dock').getBoundingClientRect().width,
                         labelsFit: [...nav.querySelectorAll('.mobile-navigation-label')].every(label => label.scrollWidth <= label.clientWidth + 1),
                         targets: [...nav.querySelectorAll('a')].map(link => ({ width: link.getBoundingClientRect().width, height: link.getBoundingClientRect().height })),
+                        summary: (() => {
+                            const summary = document.querySelector('.teacher-summary, .student-stat-grid');
+                            if (!summary) return null;
+                            return {
+                                columns: getComputedStyle(summary).gridTemplateColumns.split(' ').length,
+                                gap: getComputedStyle(summary).gap,
+                                cards: [...summary.children].map(card => ({
+                                    top: card.getBoundingClientRect().top,
+                                    height: card.getBoundingClientRect().height,
+                                    padding: getComputedStyle(card).padding,
+                                    radius: getComputedStyle(card).borderRadius,
+                                    labelFits: card.querySelector('dt').scrollWidth <= card.querySelector('dt').clientWidth + 1,
+                                })),
+                            };
+                        })(),
                         columns: document.querySelector('#teacher-month-calendar .grid-cols-7')
                             ? getComputedStyle(document.querySelector('#teacher-month-calendar .grid-cols-7')).gridTemplateColumns.split(' ').length : null,
                         calendar: (() => {
@@ -331,6 +346,18 @@ async function run() {
                     assert.ok(metrics.dockWidth <= 560, `${role}: mobile dock must stay compact on tablets`);
                     assert.ok(metrics.labelsFit, `${role}: navigation labels must fit without clipping`);
                     for (const target of metrics.targets) assert.ok(target.width >= 44 && target.height >= 44, `${role}: touch target too small`);
+                }
+                if (width < 640 && metrics.summary) {
+                    assert.equal(metrics.summary.columns, 3, `${role}: mobile summary must show three cards in one row`);
+                    assert.equal(metrics.summary.gap, '12px');
+                    const firstTop = metrics.summary.cards[0].top;
+                    for (const card of metrics.summary.cards) {
+                        assert.ok(Math.abs(card.top - firstTop) <= 1, `${role}: mobile summary cards must align`);
+                        assert.equal(card.padding, '12px 8px');
+                        assert.equal(card.radius, '12px');
+                        assert.ok(card.height <= 80, `${role}: mobile summary cards must stay compact`);
+                        assert.ok(card.labelFits, `${role}: mobile summary label must fit`);
+                    }
                 }
                 if (role === 'teacher') {
                     assert.equal(metrics.columns, 7, 'Calendar must retain seven columns');
@@ -434,6 +461,12 @@ async function run() {
                 await navigation.getByText('Calendar', { exact: true }).click();
                 await page.waitForURL('**/consultations/browse');
                 await page.locator('#student-teacher-calendar').waitFor();
+                const proposal = page.locator('form').filter({ has: page.locator('#proposed-date') });
+                await page.locator('#proposed-date').fill('2027-12-15');
+                await page.locator('#proposed-start').fill('09:07');
+                await page.locator('#proposed-end').fill('09:27');
+                await page.locator('#proposed-topic').fill('Fictional browser proposed-time request');
+                assert.equal(await proposal.evaluate(form => form.checkValidity()), true);
                 for (const width of widths) {
                     await page.setViewportSize({ width, height: 844 });
                     const calendar = await page.locator('#student-teacher-calendar').evaluate(element => ({
@@ -447,6 +480,16 @@ async function run() {
                     console.log(`PASS student booking calendar: ${width}px, compact month and readable session list`);
                 }
                 await page.setViewportSize({ width: 390, height: 844 });
+                await proposal.getByRole('button', { name: 'Send time request' }).click();
+                await page.waitForURL('**/consultations/dashboard');
+                const proposedCard = page.locator('article').filter({ hasText: 'Fictional browser proposed-time request' }).first();
+                await proposedCard.getByText('Proposed time · Awaiting teacher approval', { exact: true }).waitFor();
+                page.once('dialog', dialog => dialog.accept());
+                await proposedCard.getByRole('button', { name: 'Cancel booking' }).click();
+                await page.getByText('Booking cancelled. You can book another available time from the teacher calendar.', { exact: true }).waitFor();
+                await navigation.getByText('Calendar', { exact: true }).click();
+                await page.waitForURL('**/consultations/browse');
+                console.log('PASS student proposed time: custom date/range submission, pending approval and cancellation');
                 const availableDate = page.locator('#student-teacher-calendar a[data-calendar-date]').first();
                 if (await availableDate.count()) {
                     const studentURL = page.url();
@@ -459,6 +502,28 @@ async function run() {
                     assert.equal(page.url(), studentURL, 'Student mobile date selection must stay on calendar');
                     const reason = modal.getByRole('textbox', { name: 'Consultation reason' }).first();
                     if (await reason.count()) await reason.fill('Keep this reason when closing the schedule.');
+                    const rangeForm = modal.locator('[data-booking-range]').first();
+                    if (await rangeForm.count()) {
+                        const start = rangeForm.locator('[name="starts_at"]');
+                        const end = rangeForm.locator('[name="ends_at"]');
+                        const earliest = await start.getAttribute('min');
+                        const maximum = Number(await rangeForm.getAttribute('data-booking-maximum'));
+                        const [hours, minutes] = earliest.split(':').map(Number);
+                        const at = offset => `${String(Math.floor((hours * 60 + minutes + offset) / 60)).padStart(2, '0')}:${String((minutes + offset) % 60).padStart(2, '0')}`;
+                        await start.fill(earliest);
+                        await end.fill(at(maximum + 1));
+                        assert.equal(await end.evaluate(input => input.validity.valid), false, 'Teacher maximum must reject an overlong range in the browser');
+                        await end.fill(at(maximum));
+                        assert.equal(await end.evaluate(input => input.validity.valid), true, 'A free range at the teacher limit should be valid');
+                        assert.ok((await rangeForm.locator('[data-booking-duration]').textContent()).includes(`${maximum} minute consultation`));
+                        for (const width of [320, 390, 768]) {
+                            await page.setViewportSize({ width, height: 844 });
+                            const overflow = await modal.evaluate(element => element.scrollWidth > element.clientWidth + 1);
+                            assert.equal(overflow, false, `Time range form must fit modal at ${width}px`);
+                        }
+                        await page.setViewportSize({ width: 390, height: 844 });
+                        console.log('PASS student chosen-time booking: start/end controls, teacher duration cap, live duration and mobile modal fit');
+                    }
                     await modal.getByRole('button', { name: 'Close schedule' }).click();
                     assert.equal(await page.locator(`[data-schedule-date="${date}"]`).count(), sessionCount, 'Closing must restore all schedule cards');
                     await availableDate.click();
@@ -475,6 +540,102 @@ async function run() {
                 await page.waitForURL(url => url.searchParams.has('month') && url.hash === '#student-teacher-calendar');
                 await page.locator('[data-mobile-navigation]').getByText('My profile', { exact: true }).click();
                 await page.waitForURL('**/consultations/student/profile');
+                await page.locator('[data-student-profile-form]').waitFor();
+                await page.waitForFunction(() => document.querySelector('[data-student-profile-form]').dataset.initialized === 'true');
+                const address = page.locator('#house_number');
+                const originalAddress = await address.inputValue();
+                await address.fill(`${originalAddress} Updated unit`);
+                assert.equal(await page.locator('[data-student-save-state]').textContent(), 'You have unsaved changes');
+                await address.fill(originalAddress);
+                assert.equal(await page.locator('.profile-save-bar').getAttribute('data-dirty'), 'false');
+                for (const width of widths) {
+                    await page.setViewportSize({ width, height: 844 });
+                    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
+                    const metrics = await page.evaluate(() => ({
+                        width: document.documentElement.scrollWidth,
+                        sidebarVisible: getComputedStyle(document.querySelector('.student-sidebar')).display !== 'none',
+                        sidebarRight: document.querySelector('.student-sidebar').getBoundingClientRect().right,
+                        workspaceLeft: document.querySelector('#student-workspace').getBoundingClientRect().left,
+                        workspaceRight: document.querySelector('#student-workspace').getBoundingClientRect().right,
+                        columns: getComputedStyle(document.querySelector('.profile-workspace')).gridTemplateColumns.split(' ').length,
+                        containerWidth: document.querySelector('.student-profile-page').clientWidth,
+                    }));
+                    assert.ok(metrics.width <= width + 1, `Student profile must not overflow at ${width}px`);
+                    assert.equal(metrics.sidebarVisible, width >= 1024);
+                    assert.equal(metrics.columns, metrics.containerWidth >= 860 ? 2 : 1);
+                    if (width >= 1024) {
+                        assert.ok(Math.abs(metrics.workspaceLeft - metrics.sidebarRight) <= 1);
+                        assert.ok(Math.abs(metrics.workspaceRight - width) <= 1, 'Student workspace must use remaining desktop width');
+                    }
+                }
+                const studentMenu = page.locator('[data-student-account-menu]');
+                await studentMenu.locator('summary').focus();
+                await page.keyboard.press('Enter');
+                assert.ok(await studentMenu.getByRole('link', { name: 'My profile', exact: true }).isVisible());
+                await page.keyboard.press('Escape');
+                assert.equal(await studentMenu.getAttribute('open'), null);
+                await studentMenu.locator('summary').click();
+                await page.evaluate(() => {
+                    window.studentProfileVisitComplete = false;
+                    document.addEventListener('turbo:load', () => { window.studentProfileVisitComplete = true; }, { once: true });
+                });
+                await studentMenu.getByRole('link', { name: 'My profile', exact: true }).click();
+                await page.waitForFunction(() => window.studentProfileVisitComplete && document.querySelector('[data-student-profile-form]')?.dataset.initialized === 'true');
+                await page.setViewportSize({ width: 390, height: 844 });
+                const studentPortrait = await page.evaluate(() => {
+                    const canvas = document.createElement('canvas'); canvas.width = 320; canvas.height = 160;
+                    const context = canvas.getContext('2d'); context.fillStyle = '#0e7490'; context.fillRect(0, 0, 320, 160);
+                    return canvas.toDataURL('image/png').split(',')[1];
+                });
+                await page.locator('#profile_photo').setInputFiles({ name: 'demo-student.png', mimeType: 'image/png', buffer: Buffer.from(studentPortrait, 'base64') });
+                const studentCrop = page.getByRole('dialog', { name: 'Crop profile picture', exact: true });
+                await studentCrop.waitFor();
+                await studentCrop.getByRole('button', { name: 'Cancel', exact: true }).click();
+                await studentCrop.waitFor({ state: 'hidden' });
+                assert.equal(await page.locator('#profile_photo').evaluate(input => input.files.length), 0);
+                await page.locator('#profile_photo').setInputFiles({ name: 'demo-student.png', mimeType: 'image/png', buffer: Buffer.from(studentPortrait, 'base64') });
+                await studentCrop.getByRole('button', { name: 'Use photo', exact: true }).click();
+                await studentCrop.waitFor({ state: 'hidden' });
+                assert.ok((await page.locator('[data-student-photo-preview]').getAttribute('src')).startsWith('blob:'));
+                await page.waitForFunction(() => [...document.querySelector('#region-options').options].some(option => option.value === 'National Capital Region (NCR)'));
+                await page.locator('#region').fill('');
+                await page.locator('#region').fill('National Capital Region (NCR)');
+                await page.waitForFunction(() => [...document.querySelector('#city-options').options].some(option => option.value === 'Quezon City'));
+                await page.locator('#city').fill('Quezon City');
+                await page.waitForFunction(() => [...document.querySelector('#barangay-options').options].some(option => option.value === 'Diliman'));
+                await page.locator('#barangay').fill('Diliman');
+                await page.locator('#house_number').fill('12 Fictional Street');
+                await page.locator('#postal_code').fill('1101');
+                await page.getByRole('button', { name: 'Save profile', exact: true }).click();
+                await page.getByText('Student profile updated successfully.', { exact: true }).waitFor();
+                await page.waitForFunction(() => document.querySelector('[data-student-photo-preview]').naturalWidth === 512);
+                assert.equal(await page.locator('[data-student-photo-preview]').evaluate(image => image.naturalHeight), 512);
+                assert.ok(await page.locator('[data-mobile-account-menu] img').isVisible(), 'Saved student photo must appear in mobile top bar');
+                assert.equal(await page.locator('#region').inputValue(), 'National Capital Region (NCR)');
+                assert.equal(await page.locator('#city').inputValue(), 'Quezon City');
+                assert.equal(await page.locator('#barangay').inputValue(), 'Diliman');
+                await page.unroute('https://psgc.gitlab.io/api/**');
+                await page.route('https://psgc.gitlab.io/api/**', route => route.abort());
+                await page.goto(`${base}/consultations/student/profile`);
+                await page.getByText('Address suggestions are temporarily unavailable. You can still type your complete address manually and save.', { exact: true }).waitFor();
+                await page.locator('#region').fill('Manual demo region');
+                await page.locator('#city').fill('Manual demo city');
+                await page.locator('#barangay').fill('Manual demo barangay');
+                await page.getByRole('button', { name: 'Save profile', exact: true }).click();
+                await page.getByText('Student profile updated successfully.', { exact: true }).waitFor();
+                assert.equal(await page.locator('#city').inputValue(), 'Manual demo city');
+                console.log('PASS student address: cascading suggestions, required child fields, persistence and offline manual-entry save');
+                if (process.env.CALENDAR_SCREENSHOT_DIR) {
+                    for (const path of ['dashboard', 'browse', 'student/profile']) {
+                        await page.goto(`${base}/consultations/${path}`);
+                        for (const width of [390, 1440]) {
+                            await page.setViewportSize({ width, height: 1000 });
+                            await page.screenshot({ path: require('node:path').join(process.env.CALENDAR_SCREENSHOT_DIR, `student-${path.replace('/', '-')}-${width}.png`), fullPage: true });
+                        }
+                    }
+                    await page.setViewportSize({ width: 390, height: 844 });
+                }
+                console.log('PASS student redesign: full-width desktop shell, responsive profile, account menu, live save state, crop cancellation and saved avatar');
             } else {
                 await navigation.getByText(role === 'admin' ? 'School' : 'My profile', { exact: true }).click();
                 await page.waitForURL(role === 'admin' ? '**/admin/school' : '**/consultations/student/profile');

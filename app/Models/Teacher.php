@@ -10,11 +10,13 @@ use Illuminate\Validation\Rule;
 
 class Teacher extends Model
 {
-    protected $fillable = ['user_id', 'consultation_approved', 'slot_minutes', 'auto_approve_bookings', 'show_student_names', 'contact_number', 'birthday', 'gender', 'address', 'profile_photo_path', 'phone_country', 'house_number', 'region', 'province', 'city', 'barangay', 'postal_code', 'consultation_offerings'];
+    protected $attributes = ['max_consultation_minutes' => 30];
+
+    protected $fillable = ['user_id', 'consultation_approved', 'slot_minutes', 'max_consultation_minutes', 'auto_approve_bookings', 'show_student_names', 'contact_number', 'birthday', 'gender', 'address', 'profile_photo_path', 'phone_country', 'house_number', 'region', 'province', 'city', 'barangay', 'postal_code', 'consultation_offerings'];
 
     protected function casts(): array
     {
-        return ['consultation_approved' => 'boolean', 'slot_minutes' => 'integer', 'auto_approve_bookings' => 'boolean', 'show_student_names' => 'boolean', 'birthday' => 'date'];
+        return ['consultation_approved' => 'boolean', 'slot_minutes' => 'integer', 'max_consultation_minutes' => 'integer', 'auto_approve_bookings' => 'boolean', 'show_student_names' => 'boolean', 'birthday' => 'date'];
     }
 
     public function subjects(): BelongsToMany

@@ -12,13 +12,21 @@
     <script src="{{ asset('js/mobile-navigation.js') }}" defer></script>
     <script src="{{ asset('js/mobile-account-menu.js') }}" defer data-turbo-eval="false"></script>
     <script src="{{ asset('js/calendar-schedule-modal.js') }}" defer data-turbo-eval="false"></script>
-    @if(auth()->user()->isTeacher())
+    @if(auth()->user()->isTeacher() || auth()->user()->isStudent())
         <link rel="stylesheet" href="{{ asset('css/teacher-calendar.css') }}">
         <script src="{{ asset('js/teacher-account-menu.js') }}" defer data-turbo-eval="false"></script>
-    @endif
-    @if(request()->routeIs('consultations.teacher-profile.*'))
-        <link rel="stylesheet" href="{{ asset('css/teacher-profile.css') }}">
         <script src="{{ asset('js/profile-photo-cropper.js') }}" defer data-turbo-eval="false"></script>
+    @endif
+    @if(auth()->user()->isStudent())
+        <link rel="stylesheet" href="{{ asset('css/student-portal.css') }}">
+        <script src="{{ asset('js/student-profile.js') }}" defer data-turbo-eval="false"></script>
+        <script src="{{ asset('js/student-booking.js') }}" defer data-turbo-eval="false"></script>
+        <script src="{{ asset('js/address-suggestions.js') }}" defer data-turbo-eval="false"></script>
+    @endif
+    @if(request()->routeIs('consultations.teacher-profile.*', 'consultations.student-profile.*'))
+        <link rel="stylesheet" href="{{ asset('css/teacher-profile.css') }}">
+    @endif
+    @if(auth()->user()->isTeacher())
         <script src="{{ asset('js/teacher-profile.js') }}" defer data-turbo-eval="false"></script>
         <script src="{{ asset('js/address-suggestions.js') }}" defer data-turbo-eval="false"></script>
     @endif
@@ -45,46 +53,19 @@
         }
     @endphp
     @if (auth()->user()->isStudent())
-        <aside class="fixed inset-y-0 left-0 z-30 hidden w-72 flex-col border-r border-slate-800 bg-slate-900 lg:flex">
-            <a href="{{ route('consultations.home') }}" class="flex items-center gap-3 border-b border-slate-800 px-6 py-5 text-lg font-bold">
-                @if ($siteSettings->logo_path)
-                    <img src="{{ asset('storage/'.$siteSettings->logo_path) }}" alt="" class="h-10 w-10 rounded-lg object-contain">
-                @else
-                    <span class="grid h-10 w-10 place-items-center rounded-xl bg-rose-500 text-white">{{ mb_substr($siteSettings->name ?: 'C', 0, 1) }}</span>
-                @endif
-                <span>{{ $siteSettings->name ?: 'ConSync' }}<span class="text-rose-400">.</span></span>
-            </a>
-            <nav aria-label="Student navigation" class="flex-1 space-y-2 px-4 py-6">
-                <a href="{{ route('consultations.dashboard') }}" class="block rounded-lg px-4 py-3 text-sm font-medium {{ request()->routeIs('consultations.dashboard') ? 'bg-rose-500/10 text-rose-300' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">Dashboard</a>
-                <a href="{{ route('consultations.browse') }}" class="block rounded-lg px-4 py-3 text-sm font-medium {{ request()->routeIs('consultations.browse') ? 'bg-rose-500/10 text-rose-300' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">Calendar</a>
-                <a href="{{ route('consultations.student-profile.edit') }}" class="block rounded-lg px-4 py-3 text-sm font-medium {{ request()->routeIs('consultations.student-profile.*') ? 'bg-rose-500/10 text-rose-300' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">My profile</a>
-            </nav>
-            <div class="border-t border-slate-800 p-4">
-                <p class="truncate px-3 text-sm font-semibold">{{ auth()->user()->name }}</p>
-                <p class="truncate px-3 pt-1 text-xs text-slate-500">{{ auth()->user()->email }}</p>
-                <form method="POST" action="{{ route('consultations.logout') }}" class="mt-3">
-                    @csrf
-                    <button class="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-400 hover:bg-slate-800 hover:text-white">Sign out</button>
-                </form>
-            </div>
-        </aside>
-
-        <div class="lg:pl-72">
-            <header class="mobile-topbar sticky top-0 z-20 border-b border-slate-800 bg-slate-900/95 backdrop-blur">
-                <div class="flex items-center justify-between gap-3 px-5 py-4 lg:justify-end lg:px-8">
-                    <a href="{{ route('consultations.home') }}" class="flex min-w-0 items-center gap-2 text-base font-bold lg:hidden">
-                        @if ($siteSettings->logo_path)
-                            <img src="{{ asset('storage/'.$siteSettings->logo_path) }}" alt="" class="h-8 w-8 shrink-0 rounded object-contain">
-                        @else
-                            <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-rose-500 text-sm">{{ mb_substr($siteSettings->name ?: 'C', 0, 1) }}</span>
-                        @endif
-                        <span class="truncate">{{ $siteSettings->name ?: 'ConSync' }}</span>
+        @include('student.partials.sidebar', ['items' => $mobileItems])
+        <div class="teacher-layout student-layout">
+            <header class="mobile-topbar teacher-topbar border-b border-slate-800 bg-slate-900/80">
+                <div class="flex min-w-0 items-center justify-between gap-3 px-3 py-3 sm:px-5 lg:px-6">
+                    <a href="{{ route('consultations.home') }}" class="min-w-0 flex-1 truncate text-lg font-bold lg:hidden">{{ $siteSettings->name ?: config('app.name') }}<span class="text-rose-400">.</span></a>
+                    <div class="hidden lg:block"><p class="text-xs text-slate-500">Student workspace</p><p class="mt-1 text-sm font-medium text-slate-200">{{ collect($mobileItems)->firstWhere('active', true)['label'] ?? 'Student portal' }}</p></div>
+                    <a href="{{ route('consultations.student-profile.edit') }}" aria-label="Edit your student profile" class="hidden min-w-0 items-center gap-2 text-sm text-slate-400 lg:flex lg:max-w-xs">
+                        @include('student.partials.avatar', ['avatarSize' => 'h-9 w-9'])<span class="truncate">{{ auth()->user()->name }}</span>
                     </a>
-                    <span class="hidden text-sm text-slate-400 lg:block">{{ auth()->user()->name }}</span>
                     @include('partials.mobile-account-menu')
                 </div>
             </header>
-            <main class="mx-auto max-w-6xl px-5 py-8 sm:py-10 lg:px-8">
+            <main class="student-portal min-w-0 px-3 py-6 sm:px-5 sm:py-8 lg:px-6" id="student-workspace">
                 @if (session('status'))
                     <div role="status" class="mb-6 rounded-xl border border-emerald-800 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200">{{ session('status') }}</div>
                 @endif

@@ -42,6 +42,7 @@ class SchoolConsultationWorkflowTest extends TestCase
     {
         return $this->actingAs($student)->post(route('consultations.book', $period), [
             'starts_at' => $period->date->toDateString().' '.$time,
+            'ends_at' => \Illuminate\Support\Carbon::parse($period->date->toDateString().' '.$time)->addMinutes(30)->toDateTimeString(),
             'topic' => 'Private course discussion',
         ]);
     }
@@ -77,11 +78,11 @@ class SchoolConsultationWorkflowTest extends TestCase
         $this->assertDatabaseCount('consultation_availabilities', 1);
     }
 
-    public function test_teacher_settings_cannot_self_approve_and_duration_is_snapshotted(): void
+    public function test_teacher_settings_cannot_self_approve_and_preserve_historical_availability(): void
     {
         $teacher = $this->account('Teacher');
         $this->actingAs($teacher)->put(route('consultations.teacher.settings'), [
-            'slot_minutes' => 20, 'auto_approve_bookings' => 1, 'show_student_names' => 1, 'consultation_approved' => 1,
+            'max_consultation_minutes' => 30, 'auto_approve_bookings' => 1, 'show_student_names' => 1, 'consultation_approved' => 1,
         ])->assertSessionHasNoErrors();
         $this->assertFalse($teacher->teacher->fresh()->consultation_approved);
         $teacher->teacher->update(['consultation_approved' => true]);
@@ -89,11 +90,12 @@ class SchoolConsultationWorkflowTest extends TestCase
             'date' => today()->addDay()->toDateString(), 'starts_at' => '10:00', 'ends_at' => '11:00',
         ])->assertSessionHasNoErrors();
         $period = ConsultationAvailability::firstOrFail();
-        $this->assertSame(20, $period->slot_minutes);
+        $this->assertSame(30, $period->slot_minutes);
         $this->put(route('consultations.teacher.settings'), [
-            'slot_minutes' => 45, 'auto_approve_bookings' => 0, 'show_student_names' => 0,
+            'max_consultation_minutes' => 60, 'auto_approve_bookings' => 0, 'show_student_names' => 0,
         ])->assertSessionHasNoErrors();
-        $this->assertSame(20, $period->fresh()->slot_minutes);
+        $this->assertSame(30, $period->fresh()->slot_minutes);
+        $this->assertSame(60, $teacher->teacher->fresh()->max_consultation_minutes);
     }
 
     public function test_auto_approval_and_manual_approval_are_teacher_controlled(): void
@@ -204,7 +206,7 @@ class SchoolConsultationWorkflowTest extends TestCase
         $teacher->teacher->update(['consultation_approved' => true]);
         $student = $this->account('Student');
         $period = $this->period($teacher);
-        $this->book($student, $period, '10:10')->assertSessionHasErrors('starts_at');
+        $this->book($student, $period, '09:50')->assertSessionHasErrors('starts_at');
         $this->actingAs($student)->post(route('consultations.book', $period), ['starts_at' => $period->date->toDateString().' 10:00'])->assertSessionHasErrors('topic');
         $this->post(route('consultations.book', $period), ['starts_at' => now()->subHour()->toDateTimeString(), 'topic' => 'Discussion'])->assertSessionHasErrors('starts_at');
         $this->assertDatabaseCount('consultation_appointments', 0);

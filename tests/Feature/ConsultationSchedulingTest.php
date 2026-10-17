@@ -43,6 +43,7 @@ class ConsultationSchedulingTest extends TestCase
 
         $this->post(route('consultations.book', $availability), [
             'starts_at' => Carbon::parse($date.' 10:00')->format('Y-m-d H:i:s'),
+            'ends_at' => Carbon::parse($date.' 10:30')->format('Y-m-d H:i:s'),
             'topic' => 'Course planning',
         ])->assertRedirect();
 
@@ -73,8 +74,8 @@ class ConsultationSchedulingTest extends TestCase
         ]);
         $slot = Carbon::parse($date.' 10:00')->format('Y-m-d H:i:s');
 
-        $this->actingAs($student)->post(route('consultations.book', $availability), ['starts_at' => $slot, 'topic' => 'Course planning'])->assertRedirect();
-        $this->actingAs($otherStudent)->post(route('consultations.book', $availability), ['starts_at' => $slot, 'topic' => 'Course planning'])->assertSessionHasErrors('starts_at');
+        $this->actingAs($student)->post(route('consultations.book', $availability), ['starts_at' => $slot, 'ends_at' => $date.' 10:30', 'topic' => 'Course planning'])->assertRedirect();
+        $this->actingAs($otherStudent)->post(route('consultations.book', $availability), ['starts_at' => $slot, 'ends_at' => $date.' 10:30', 'topic' => 'Course planning'])->assertSessionHasErrors('starts_at');
         $this->assertDatabaseCount('consultation_appointments', 1);
     }
 }

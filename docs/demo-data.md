@@ -19,11 +19,15 @@ Do not use these accounts or passwords in a deployed school system.
 | Student | Carlo Ramos | `demo.student3@example.com` | `/portal/login` |
 | Student | Diana Flores | `demo.student4@example.com` | `/portal/login` |
 
-Maria is approved, handles Mathematics and Science, uses 30-minute slots, manually
+Maria is approved, handles Mathematics and Science, manually
 approves requests, and hides queue names. Daniel is approved, handles English and
-Filipino, uses 20-minute slots, automatically confirms bookings, and shows queue
+Filipino, automatically confirms bookings, and shows queue
 names. Angela handles Computer Studies and awaits admin consultation approval.
 School-wide privacy settings still override teacher preferences.
+New requests use student-selected start/end times, with a default maximum of
+30 minutes per consultation. Teachers can switch the maximum to one hour in
+Consultation settings. Historical seed bookings retain their original durations
+(including Daniel's 20-minute examples); fixed slots no longer constrain new requests.
 
 Teachers now have a required profile-setup step. After importing or seeding,
 sign in as a demo teacher and complete the required personal details and upload

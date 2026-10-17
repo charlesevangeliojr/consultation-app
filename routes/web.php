@@ -46,13 +46,14 @@ Route::middleware('guest')->group(function () {
     Route::get('/register', [RegistrationController::class, 'create'])->name('register');
     Route::post('/register', [RegistrationController::class, 'store'])->middleware('throttle:5,1')->name('register.store');
 });
-Route::middleware(['auth', \App\Http\Middleware\EnsureTeacherProfileComplete::class])->prefix('consultations')->name('consultations.')->group(function () {
+Route::middleware(['auth', \App\Http\Middleware\RefreshProposedConsultationRequests::class, \App\Http\Middleware\EnsureTeacherProfileComplete::class])->prefix('consultations')->name('consultations.')->group(function () {
     Route::get('/', [ConsultationController::class, 'home'])->name('home');
     Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('dashboard');
     Route::get('/browse', [ConsultationController::class, 'browse'])->name('browse');
     Route::get('/student/profile', [StudentProfileController::class, 'edit'])->name('student-profile.edit');
     Route::put('/student/profile', [StudentProfileController::class, 'update'])->name('student-profile.update');
     Route::post('/availability/{availability}/book', [ConsultationController::class, 'book'])->name('book');
+    Route::post('/teachers/{teacher}/request-time', [ConsultationController::class, 'requestTime'])->name('request-time');
     Route::get('/teacher', [ConsultationController::class, 'teacher'])->name('teacher');
     Route::get('/teacher/requests', [ConsultationController::class, 'teacherRequests'])->name('teacher.requests');
     Route::get('/teacher/availability', [ConsultationController::class, 'teacherAvailability'])->name('teacher.availability');
@@ -73,7 +74,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::put('/school/{type}/{id}', [SchoolController::class, 'update'])->middleware('permission:settings,edit')->name('school.update');
     Route::delete('/school/{type}/{id}', [SchoolController::class, 'destroy'])->middleware('permission:settings,edit')->name('school.destroy');
     Route::put('/accounts/{user}/school-profile', [SchoolController::class, 'updateProfile'])->middleware('permission:accounts,edit')->name('accounts.school-profile');
-    Route::get('/consultations', [SchoolController::class, 'monitoring'])->middleware('permission:dashboard,view')->name('consultations');
+    Route::get('/consultations', [SchoolController::class, 'monitoring'])->middleware(['permission:dashboard,view', \App\Http\Middleware\RefreshProposedConsultationRequests::class])->name('consultations');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::view('/', 'admin.dashboard')->middleware('permission:dashboard,view')->name('dashboard');
