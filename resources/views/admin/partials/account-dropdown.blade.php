@@ -17,7 +17,7 @@
             'block rounded-lg px-3 py-2.5 text-sm transition',
             'bg-rose-500/10 text-rose-300' => request()->routeIs('admin.profile.*'),
             'text-slate-300 hover:bg-slate-800 hover:text-white' => ! request()->routeIs('admin.profile.*'),
-        ])>Profile</a>
+        ]) @if(request()->routeIs('admin.profile.*')) aria-current="page" @endif>My profile</a>
         <form method="POST" action="{{ route('admin.logout') }}" class="mt-1 border-t border-slate-800 pt-1">
             @csrf
             <button class="w-full rounded-lg px-3 py-2.5 text-left text-sm text-slate-300 transition hover:bg-slate-800 hover:text-white">Sign out</button>

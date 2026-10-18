@@ -80,7 +80,7 @@ test('short and mismatched passwords block final registration', () => {
     assert.equal(api.validateStep(3), true);
 });
 
-test('grade, section, and teacher subjects cannot be omitted', () => {
+test('grade and section cannot be omitted from student details', () => {
     const grade = field('grade_level_id', '', { required: true });
     const section = field('section_id', '', { required: true });
     const api = validation([[], [grade, section]]);
@@ -89,19 +89,4 @@ test('grade, section, and teacher subjects cannot be omitted', () => {
     assert.equal(api.validateStep(2), false);
     section.value = '2';
     assert.equal(api.validateStep(2), true);
-    const subjects = field('subject_ids[]', '', { required: true, multiple: true, selectedOptions: [] });
-    const teacherApi = validation([[subjects]]);
-    assert.equal(teacherApi.validateStep(1), false);
-    subjects.value = '1';
-    subjects.selectedOptions = [{ value: '1' }];
-    assert.equal(teacherApi.validateStep(1), true);
-});
-
-test('multiple-subject server errors compare the entire selection', () => {
-    const subjects = field('subject_ids[]', '1', { required: true, multiple: true, selectedOptions: [{ value: '1' }, { value: '99' }] });
-    const initial = JSON.stringify(['1', '99']);
-    const api = validation([[subjects]], { 'subject_ids[]': ['Invalid subject.'] }, new Map([['subject_ids[]', initial]]));
-    assert.equal(api.validateStep(1), false);
-    subjects.selectedOptions = [{ value: '1' }];
-    assert.equal(api.validateStep(1), true);
 });

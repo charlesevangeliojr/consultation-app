@@ -15,10 +15,10 @@
 
         @php
             $credentialStep = $selectedRole === 'student' ? 3 : 2;
-            $initialStep = $errors->hasAny(['first_name', 'middle_name', 'last_name', 'suffix', 'email', 'role', 'subject_ids', 'subject_ids.*']) ? 1 : ($errors->hasAny(['contact_number', 'birthday', 'gender', 'house_number', 'region', 'province', 'city', 'barangay', 'postal_code', 'lrn', 'grade_level_id', 'section_id']) ? 2 : ($errors->hasAny(['password', 'password_confirmation']) ? $credentialStep : 1));
+            $initialStep = $errors->hasAny(['first_name', 'middle_name', 'last_name', 'suffix', 'email', 'lrn', 'role']) ? 1 : ($errors->hasAny(['contact_number', 'birthday', 'gender', 'house_number', 'region', 'province', 'city', 'barangay', 'grade_level_id', 'section_id']) ? 2 : ($errors->hasAny(['password', 'password_confirmation']) ? $credentialStep : 1));
             $stepCount = $selectedRole === 'student' ? 3 : 2;
-            $firstStepFields = $selectedRole === 'teacher' ? ['first_name', 'last_name', 'email', 'subject_ids[]'] : ['first_name', 'last_name', 'email'];
-            $secondStepFields = $selectedRole === 'student' ? ['contact_number', 'birthday', 'gender', 'lrn', 'grade_level_id', 'section_id'] : ['password', 'password_confirmation'];
+            $firstStepFields = $selectedRole === 'teacher' ? ['first_name', 'last_name', 'email'] : ['first_name', 'last_name', 'lrn'];
+            $secondStepFields = $selectedRole === 'student' ? ['contact_number', 'birthday', 'gender', 'grade_level_id', 'section_id'] : ['password', 'password_confirmation'];
         @endphp
 
         <div id="registration-form" data-initial-step="{{ $initialStep }}" data-step-count="{{ $stepCount }}">
@@ -57,23 +57,18 @@
                             @error('suffix') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
                         </div>
                     </div>
-                    <div>
-                        <label for="email" class="mb-2 block text-sm font-medium">Email</label>
-                        <input id="email" name="email" type="email" maxlength="255" autocomplete="email" value="{{ old('email') }}" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-rose-400">
-                        @error('email') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
-                    </div>
-                    @if ($selectedRole === 'teacher')
+                    @if ($selectedRole === 'student')
                         <div>
-                            <label for="subject_ids" class="mb-2 block text-sm font-medium">Subjects you handle</label>
-                            <select id="subject_ids" name="subject_ids[]" multiple size="4" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-rose-400">
-                                @foreach ($subjects as $subject)
-                                    <option value="{{ $subject->id }}" @selected(in_array($subject->id, old('subject_ids', [])))>{{ $subject->name }}</option>
-                                @endforeach
-                            </select>
-                            <p class="mt-1 text-xs text-slate-500">Select one or more subjects. Use Ctrl/Cmd to select multiple on desktop.</p>
-                            @if ($subjects->isEmpty())<p class="mt-2 text-sm text-amber-300">An administrator must add subjects before you can register.</p>@endif
-                            @error('subject_ids') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
-                            @foreach ($errors->get('subject_ids.*') as $messages) @foreach ($messages as $message)<p class="mt-2 text-sm text-rose-300">{{ $message }}</p>@endforeach @endforeach
+                            <label for="lrn" class="mb-2 block text-sm font-medium">LRN <span class="text-slate-500">(12 digits)</span></label>
+                            <input id="lrn" name="lrn" type="text" inputmode="numeric" maxlength="12" pattern="[0-9]{12}" autocomplete="username" placeholder="12-digit learner reference number" value="{{ old('lrn') }}" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-rose-400">
+                            <p class="mt-1 text-xs text-slate-500">Enter exactly 12 digits. Use your LRN to sign in.</p>
+                            @error('lrn') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
+                        </div>
+                    @else
+                        <div>
+                            <label for="email" class="mb-2 block text-sm font-medium">Email</label>
+                            <input id="email" name="email" type="email" maxlength="255" autocomplete="email" value="{{ old('email') }}" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-rose-400">
+                            @error('email') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
                         </div>
                     @endif
                     <button type="button" data-next class="w-full rounded-lg bg-rose-500 px-5 py-3 font-semibold transition hover:bg-rose-400">Continue</button>
@@ -130,12 +125,6 @@
                                 @error('gender') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
                             </div>
                         </div>
-                        <div>
-                            <label for="lrn" class="mb-2 block text-sm font-medium">LRN <span class="text-slate-500">(12 digits)</span></label>
-                            <input id="lrn" name="lrn" type="text" inputmode="numeric" maxlength="12" pattern="[0-9]{12}" placeholder="12-digit learner reference number" value="{{ old('lrn') }}" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-rose-400">
-                            <p class="mt-1 text-xs text-slate-500">Enter exactly 12 digits.</p>
-                            @error('lrn') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
-                        </div>
                         <fieldset class="space-y-3">
                             <legend class="text-sm font-medium">Address</legend>
                             <div class="grid gap-3 sm:grid-cols-2">
@@ -167,11 +156,6 @@
                                     <label for="house_number" class="sr-only">House / unit no.</label>
                                     <input id="house_number" name="house_number" type="text" maxlength="100" placeholder="House / unit no. (optional)" value="{{ old('house_number') }}" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none placeholder:text-slate-500 focus:border-rose-400">
                                     @error('house_number') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
-                                </div>
-                                <div>
-                                    <label for="postal_code" class="sr-only">Postal code</label>
-                                    <input id="postal_code" name="postal_code" type="text" inputmode="numeric" maxlength="20" placeholder="Postal code (optional)" value="{{ old('postal_code') }}" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none placeholder:text-slate-500 focus:border-rose-400">
-                                    @error('postal_code') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
                                 </div>
                             </div>
                             <p id="location-help" class="text-xs text-slate-500">Choose a region, then select the province, city/municipality, and barangay.</p>

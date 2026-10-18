@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#020617">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="account-activity-url" content="{{ route('account.activity') }}">
+    <script src="{{ asset('js/account-activity.js') }}" defer data-turbo-eval="false"></script>
     <title>@yield('title') · {{ $siteSettings->name ?? 'ConSync' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.12/dist/turbo.es2017-umd.js" defer></script>

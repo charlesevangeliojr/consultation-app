@@ -61,17 +61,19 @@ class SchoolConsultationWorkflowTest extends TestCase
         $this->assertDatabaseCount('consultation_appointments', 0);
     }
 
-    public function test_admin_approves_teacher_and_edits_subjects(): void
+    public function test_admin_approves_teacher_without_subjects_and_preserves_existing_assignments(): void
     {
         $admin = $this->account('Super Admin');
         $teacher = $this->account('Teacher');
         $subject = Subject::create(['name' => 'Physics']);
-        $this->actingAs($admin)->get(route('admin.accounts.edit', $teacher))->assertOk()->assertSee('Consultation permission');
+        $teacher->teacher->subjects()->attach($subject);
+        $existingSubjects = $teacher->teacher->subjects()->orderBy('subjects.id')->pluck('subjects.id')->all();
+        $this->actingAs($admin)->get(route('admin.accounts.edit', $teacher))->assertOk()->assertSee('Consultation permission')->assertDontSee('name="subject_ids[]"', false);
         $this->put(route('admin.accounts.school-profile', $teacher), [
-            'consultation_approved' => 1, 'subject_ids' => [$subject->id],
+            'consultation_approved' => 1,
         ])->assertSessionHasNoErrors()->assertRedirect();
         $this->assertTrue($teacher->teacher->fresh()->consultation_approved);
-        $this->assertSame([$subject->id], $teacher->teacher->subjects->pluck('id')->all());
+        $this->assertSame($existingSubjects, $teacher->teacher->subjects()->orderBy('subjects.id')->pluck('subjects.id')->all());
         $this->actingAs($teacher)->post(route('consultations.availability.store'), [
             'date' => today()->addDay()->toDateString(), 'starts_at' => '10:00', 'ends_at' => '11:00',
         ])->assertSessionHasNoErrors()->assertRedirect();
@@ -233,8 +235,6 @@ class SchoolConsultationWorkflowTest extends TestCase
         $grade = GradeLevel::firstOrFail();
         $this->post(route('admin.school.store', 'sections'), ['name' => 'Einstein', 'grade_level_id' => $grade->id])->assertSessionHasNoErrors();
         $section = Section::firstOrFail();
-        $this->post(route('admin.school.store', 'subjects'), ['name' => 'Science'])->assertSessionHasNoErrors();
-        $subject = Subject::firstOrFail();
         $student = $this->account('Student');
         $this->actingAs($admin)->put(route('admin.accounts.school-profile', $student), [
             'grade_level_id' => $grade->id, 'section_id' => $section->id, 'status' => 'active', 'lrn' => '123456789012',
@@ -243,13 +243,27 @@ class SchoolConsultationWorkflowTest extends TestCase
         $this->get(route('admin.accounts.edit', $student))->assertOk()->assertSee('Student school profile');
         $this->delete(route('admin.school.destroy', ['sections', $section->id]))->assertSessionHasErrors('catalog');
         $this->delete(route('admin.school.destroy', ['grade-levels', $grade->id]))->assertSessionHasErrors('catalog');
+        $this->put(route('admin.school.update', ['sections', $section->id]), ['name' => 'Curie'])->assertSessionHasNoErrors();
+        $unused = GradeLevel::create(['name' => 'Unused grade']);
+        $this->delete(route('admin.school.destroy', ['grade-levels', $unused->id]))->assertSessionHasNoErrors();
+        $this->assertDatabaseMissing('grade_levels', ['id' => $unused->id]);
+    }
+
+    public function test_admin_subject_management_is_removed(): void
+    {
+        $admin = $this->account('Super Admin');
+        $subject = Subject::create(['name' => 'Legacy subject']);
         $teacher = $this->account('Teacher');
         $teacher->teacher->subjects()->attach($subject);
-        $this->delete(route('admin.school.destroy', ['subjects', $subject->id]))->assertSessionHasErrors('catalog');
-        $this->put(route('admin.school.update', ['subjects', $subject->id]), ['name' => 'Physics'])->assertSessionHasNoErrors();
-        $unused = Subject::create(['name' => 'Unused subject']);
-        $this->delete(route('admin.school.destroy', ['subjects', $unused->id]))->assertSessionHasNoErrors();
-        $this->assertDatabaseMissing('subjects', ['id' => $unused->id]);
+        $existingSubjects = $teacher->teacher->subjects()->orderBy('subjects.id')->pluck('subjects.id')->all();
+        $this->actingAs($admin)->get(route('admin.school'))->assertOk()->assertDontSee('Subjects')->assertDontSee('Legacy subject');
+        $this->get(route('admin.consultations'))->assertOk()->assertDontSee('Legacy subject')->assertDontSee('No subjects assigned');
+        $this->post(route('admin.school.store', 'subjects'), ['name' => 'New subject'])->assertNotFound();
+        $this->put(route('admin.school.update', ['subjects', $subject->id]), ['name' => 'Changed subject'])->assertNotFound();
+        $this->delete(route('admin.school.destroy', ['subjects', $subject->id]))->assertNotFound();
+        $this->put(route('admin.accounts.school-profile', $teacher), ['consultation_approved' => 1, 'subject_ids' => []])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('subjects', ['id' => $subject->id, 'name' => 'Legacy subject']);
+        $this->assertSame($existingSubjects, $teacher->teacher->subjects()->orderBy('subjects.id')->pluck('subjects.id')->all());
     }
 
     public function test_students_and_teachers_cannot_use_admin_management_routes(): void

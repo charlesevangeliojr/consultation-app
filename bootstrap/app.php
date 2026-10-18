@@ -11,6 +11,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [\App\Http\Middleware\TrackAccountActivity::class]);
         $middleware->redirectGuestsTo(fn (\Illuminate\Http\Request $request) => route($request->is('admin', 'admin/*') ? 'admin.login' : 'portal.login'));
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,

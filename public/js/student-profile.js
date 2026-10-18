@@ -16,7 +16,7 @@
         let acceptedPhoto = null;
         let objectURL = null;
         const update = () => {
-            const addressStarted = form.dataset.hasStructuredAddress === 'true' || ['house_number', 'region', 'province', 'city', 'barangay', 'postal_code'].some(key => form.elements[key].value.trim());
+            const addressStarted = form.dataset.hasStructuredAddress === 'true' || ['house_number', 'region', 'province', 'city', 'barangay'].some(key => form.elements[key].value.trim());
             ['region', 'city', 'barangay'].forEach(key => { form.elements[key].required = addressStarted; });
             const dirty = snapshot() !== initial;
             saveBar.dataset.dirty = String(dirty);

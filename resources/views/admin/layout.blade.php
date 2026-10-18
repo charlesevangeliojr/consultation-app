@@ -3,15 +3,16 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="account-activity-url" content="{{ route('account.activity') }}">
+    <script src="{{ asset('js/account-activity.js') }}" defer data-turbo-eval="false"></script>
     <title>@yield('title', 'Admin') · {{ $siteSettings->name }}</title>
-    @if ($siteSettings->favicon_path)
-        <link rel="icon" href="{{ asset('storage/'.$siteSettings->favicon_path) }}">
-    @else
-        <link rel="icon" href="{{ asset('favicon.ico') }}">
-    @endif
+    <link rel="icon" href="{{ $siteSettings->favicon_path ? asset('storage/'.$siteSettings->favicon_path) : asset('favicon.ico') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.12/dist/turbo.es2017-umd.js" defer></script>
     <link rel="stylesheet" href="{{ asset('css/mobile-navigation.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/admin-navigation.css') }}">
+    <script src="{{ asset('js/admin-navigation.js') }}" defer data-turbo-eval="false"></script>
     <script src="{{ asset('js/mobile-navigation.js') }}" defer></script>
     <script src="{{ asset('js/mobile-account-menu.js') }}" defer data-turbo-eval="false"></script>
     @if (request()->routeIs('admin.accounts*', 'admin.roles.*'))
@@ -20,97 +21,70 @@
     @endif
     <link rel="stylesheet" href="{{ asset('css/form-controls.css') }}">
 </head>
-    <body @class(['has-mobile-navigation min-h-screen bg-slate-950 text-white antialiased', 'user-management' => request()->routeIs('admin.accounts*', 'admin.roles.*')])>
-    <div class="min-h-screen lg:flex">
-        <aside class="hidden w-64 shrink-0 flex-col border-r border-slate-800 bg-slate-900 lg:flex lg:min-h-screen">
-            <a href="{{ auth()->user()->canAccess('dashboard', 'view') ? route('admin.dashboard') : (auth()->user()->canAccess('settings', 'view') ? route('admin.settings') : route('admin.accounts')) }}" class="flex items-center gap-3 border-b border-slate-800 px-6 py-6 text-lg font-bold">
-                @if ($siteSettings->logo_path)
-                    <img src="{{ asset('storage/'.$siteSettings->logo_path) }}" alt="" class="h-9 w-9 rounded object-contain">
-                @endif
-                <span>{{ $siteSettings->name }} <span class="text-rose-400">Admin</span></span>
-            </a>
-            <nav aria-label="Admin navigation" class="flex gap-2 overflow-x-auto p-4 md:flex-1 md:flex-col">
-                @if (auth()->user()->canAccess('settings', 'view'))
-                    <a href="{{ route('admin.school') }}" class="shrink-0 rounded-lg px-4 py-3 text-sm {{ request()->routeIs('admin.school*') ? 'bg-rose-500/10 text-rose-300' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">School lists</a>
-                @endif
-                @if (auth()->user()->canAccess('dashboard', 'view'))
-                    <a href="{{ route('admin.consultations') }}" class="shrink-0 rounded-lg px-4 py-3 text-sm {{ request()->routeIs('admin.consultations') ? 'bg-rose-500/10 text-rose-300' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">Consultation monitoring</a>
-                @endif
-                @if (auth()->user()->canAccess('dashboard', 'view'))
-                <a href="{{ route('admin.dashboard') }}" @class([
-                    'flex shrink-0 items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition',
-                    'bg-rose-500/10 text-rose-300' => request()->routeIs('admin.dashboard'),
-                    'text-slate-400 hover:bg-slate-800 hover:text-white' => ! request()->routeIs('admin.dashboard'),
-                ])>
-                    <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>
-                    Dashboard
-                </a>
-                @endif
-                @if (auth()->user()->canAccess('settings', 'view'))
-                <a href="{{ route('admin.settings') }}" @class([
-                    'flex shrink-0 items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition',
-                    'bg-rose-500/10 text-rose-300' => request()->routeIs('admin.settings'),
-                    'text-slate-400 hover:bg-slate-800 hover:text-white' => ! request()->routeIs('admin.settings'),
-                ])>
-                    <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path stroke-linecap="round" stroke-linejoin="round" d="m19.4 15 .1.1a1.7 1.7 0 1 1-2.4 2.4l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a1.7 1.7 0 1 1-3.4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a1.7 1.7 0 1 1-2.4-2.4l.1-.1a1.7 1.7 0 0 0-1.2-2.9H4a1.7 1.7 0 1 1 0-3.4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a1.7 1.7 0 1 1 2.4-2.4l.1.1a1.7 1.7 0 0 0 2.9-1.2V4a1.7 1.7 0 1 1 3.4 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a1.7 1.7 0 1 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a1.7 1.7 0 1 1 0 3.4h-.2a1.7 1.7 0 0 0-1.2.9Z"/></svg>
-                    Settings
-                </a>
-                @endif
-                @if (auth()->user()->canAccess('accounts', 'view'))
-                <details class="min-w-0 shrink-0 md:shrink" @if (request()->routeIs('admin.accounts*', 'admin.roles.*')) open @endif>
-                    <summary @class([
-                        'flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-4 py-3 text-sm font-medium transition',
-                        'bg-rose-500/10 text-rose-300' => request()->routeIs('admin.accounts*', 'admin.roles.*'),
-                        'text-slate-400 hover:bg-slate-800 hover:text-white' => ! request()->routeIs('admin.accounts*', 'admin.roles.*'),
-                    ])>
-                        <span class="flex items-center gap-3"><svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.8 20v-1.4a6.2 6.2 0 0 1 12.4 0V20M17 5.2a3.5 3.5 0 0 1 0 6.6m1.1 2.4a5.4 5.4 0 0 1 3.1 4.9V20"/></svg> User Management</span>
-                        <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>
-                    </summary>
-                    <div class="mt-1 flex gap-1 pl-4 md:flex-col">
-                        <a href="{{ route('admin.roles.index') }}" @class([
-                            'rounded-lg px-4 py-2 text-sm transition',
-                            'bg-slate-800 text-white' => request()->routeIs('admin.roles.*'),
-                            'text-slate-400 hover:bg-slate-800 hover:text-white' => ! request()->routeIs('admin.roles.*'),
-                        ])>Roles</a>
-                        <a href="{{ route('admin.accounts') }}" @class([
-                            'rounded-lg px-4 py-2 text-sm transition',
-                            'bg-slate-800 text-white' => request()->routeIs('admin.accounts*'),
-                            'text-slate-400 hover:bg-slate-800 hover:text-white' => ! request()->routeIs('admin.accounts*'),
-                        ])>Accounts</a>
-                    </div>
-                </details>
-                @endif
-            </nav>
-            <div class="hidden border-t border-slate-800 p-4 lg:block">
-                @include('admin.partials.account-dropdown')
-            </div>
+<body @class(['admin-workspace has-mobile-navigation min-h-screen bg-slate-950 text-white antialiased', 'user-management' => request()->routeIs('admin.accounts*', 'admin.roles.*')])>
+    @php
+        $adminGroups = [
+            ['label' => 'Overview', 'permission' => 'dashboard', 'items' => [
+                ['label' => 'Dashboard', 'icon' => 'home', 'route' => 'admin.dashboard', 'pattern' => 'admin.dashboard'],
+                ['label' => 'Consultations', 'icon' => 'calendar', 'route' => 'admin.consultations', 'pattern' => 'admin.consultations'],
+            ]],
+            ['label' => 'People & access', 'permission' => 'accounts', 'items' => [
+                ['label' => 'Accounts', 'icon' => 'users', 'route' => 'admin.accounts', 'pattern' => 'admin.accounts*'],
+                ['label' => 'Roles & permissions', 'icon' => 'shield', 'route' => 'admin.roles.index', 'pattern' => 'admin.roles.*'],
+            ]],
+            ['label' => 'School setup', 'permission' => 'settings', 'items' => [
+                ['label' => 'Academic lists', 'icon' => 'school', 'route' => 'admin.school', 'pattern' => 'admin.school*'],
+                ['label' => 'School settings', 'icon' => 'settings', 'route' => 'admin.settings', 'pattern' => 'admin.settings'],
+            ]],
+        ];
+        $adminGroups = array_values(array_filter($adminGroups, fn ($group) => auth()->user()->canAccess($group['permission'], 'view')));
+        $adminHome = count($adminGroups) ? route($adminGroups[0]['items'][0]['route']) : route('admin.profile.edit');
+        $mobileItems = [];
+        foreach ($adminGroups as $group) {
+            foreach ($group['items'] as $item) {
+                if ($item['route'] === 'admin.roles.index') continue;
+                $mobileItems[] = ['label' => match ($item['route']) {
+                    'admin.school' => 'School', 'admin.settings' => 'Settings', default => $item['label'],
+                }, 'icon' => $item['icon'], 'url' => route($item['route']),
+                    'active' => request()->routeIs($item['pattern']) || ($item['route'] === 'admin.accounts' && request()->routeIs('admin.roles.*'))];
+            }
+        }
+    @endphp
+    <div class="admin-shell">
+        <aside class="admin-sidebar" aria-label="Administration sidebar">
+            @include('admin.partials.navigation-brand')
+            @include('admin.partials.navigation', ['navigationLabel' => 'Admin navigation'])
+            <div class="admin-sidebar-footer">@include('admin.partials.account-dropdown')</div>
         </aside>
-
-        <div class="min-w-0 flex-1">
-            <header class="mobile-topbar flex items-center justify-between border-b border-slate-800 px-6 py-4 md:px-10">
-                <h1 class="text-sm font-medium text-slate-300">@yield('title')</h1>
-                <span class="hidden rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-400 lg:inline">Administrator</span>
-                @include('partials.mobile-account-menu', ['mobileLogoutUrl' => route('admin.logout')])
+        <div class="admin-content">
+            <header class="mobile-topbar admin-topbar">
+                <div class="admin-topbar-heading">
+                    <button type="button" class="admin-menu-toggle" data-admin-menu-open aria-label="Open admin menu" aria-controls="admin-mobile-menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+                    <div class="admin-page-title"><p>Administration</p><h1>@yield('title', 'Dashboard')</h1></div>
+                </div>
+                <span class="admin-access-label">{{ auth()->user()->isAdmin() ? 'Super Admin' : 'Administrator' }}</span>
+                @include('partials.mobile-account-menu', ['mobileLogoutUrl' => route('admin.logout'), 'mobileProfileUrl' => route('admin.profile.edit')])
             </header>
             @if(auth()->user()->canAccess('accounts', 'view') && request()->routeIs('admin.accounts*', 'admin.roles.*'))
-                <nav aria-label="User management navigation" class="flex gap-3 border-b border-slate-800 px-6 py-2 lg:hidden">
-                    <a href="{{ route('admin.accounts') }}" class="inline-flex min-h-11 items-center px-2 text-sm {{ request()->routeIs('admin.accounts*') ? 'text-rose-300' : 'text-slate-400' }}">Accounts</a>
-                    <a href="{{ route('admin.roles.index') }}" class="inline-flex min-h-11 items-center px-2 text-sm {{ request()->routeIs('admin.roles.*') ? 'text-rose-300' : 'text-slate-400' }}">Roles</a>
+                <nav aria-label="People and access navigation" class="admin-section-tabs">
+                    <a href="{{ route('admin.accounts') }}" @if(request()->routeIs('admin.accounts*')) aria-current="page" @endif>Accounts</a>
+                    <a href="{{ route('admin.roles.index') }}" @if(request()->routeIs('admin.roles.*')) aria-current="page" @endif>Roles &amp; permissions</a>
                 </nav>
             @endif
-            <main class="mx-auto max-w-6xl px-6 py-10 md:px-10 md:py-12">
-                @yield('content')
-            </main>
+            <main class="admin-main" id="admin-workspace">@yield('content')</main>
         </div>
     </div>
-    @php
-        $mobileItems = [];
-        if (auth()->user()->canAccess('dashboard', 'view')) $mobileItems[] = ['label' => 'Dashboard', 'icon' => 'home', 'url' => route('admin.dashboard'), 'active' => request()->routeIs('admin.dashboard')];
-        if (auth()->user()->canAccess('accounts', 'view')) $mobileItems[] = ['label' => 'Accounts', 'icon' => 'users', 'url' => route('admin.accounts'), 'active' => request()->routeIs('admin.accounts*', 'admin.roles.*')];
-        if (auth()->user()->canAccess('settings', 'view')) $mobileItems[] = ['label' => 'School', 'icon' => 'school', 'url' => route('admin.school'), 'active' => request()->routeIs('admin.school*')];
-        if (auth()->user()->canAccess('dashboard', 'view')) $mobileItems[] = ['label' => 'Monitor', 'icon' => 'monitor', 'url' => route('admin.consultations'), 'active' => request()->routeIs('admin.consultations')];
-        if (auth()->user()->canAccess('settings', 'view')) $mobileItems[] = ['label' => 'Settings', 'icon' => 'settings', 'url' => route('admin.settings'), 'active' => request()->routeIs('admin.settings')];
-    @endphp
+    <dialog id="admin-mobile-menu" class="admin-mobile-menu" aria-labelledby="admin-mobile-menu-title" data-admin-menu>
+        <div class="admin-drawer-layout">
+            <div class="admin-drawer-header"><h2 id="admin-mobile-menu-title">Admin menu</h2><button type="button" class="admin-menu-close" data-admin-menu-close aria-label="Close admin menu" autofocus><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+            @include('admin.partials.navigation-brand')
+            @include('admin.partials.navigation', ['navigationLabel' => 'Admin menu navigation'])
+            <div class="admin-drawer-footer">
+                <a href="{{ route('admin.profile.edit') }}" class="admin-navigation-link" @if(request()->routeIs('admin.profile.*')) aria-current="page" @endif>@include('partials.navigation-icon', ['icon' => 'profile'])<span>My profile</span></a>
+                <form method="POST" action="{{ route('admin.logout') }}">@csrf<button class="admin-navigation-link admin-sign-out">@include('partials.navigation-icon', ['icon' => 'logout'])<span>Sign out</span></button></form>
+            </div>
+        </div>
+    </dialog>
     @include('partials.mobile-navigation', ['mobileLabel' => 'Admin mobile navigation'])
 </body>
 </html>

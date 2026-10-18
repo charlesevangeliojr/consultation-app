@@ -48,6 +48,7 @@ class AdminLoginController extends Controller
 
     public function destroy(Request $request): RedirectResponse
     {
+        $request->user()->forceFill(['last_logged_out_at' => now()])->saveQuietly();
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

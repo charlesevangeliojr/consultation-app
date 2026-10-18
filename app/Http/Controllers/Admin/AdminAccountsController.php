@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\GradeLevel;
-use App\Models\Subject;
+use App\Support\AccountActivity;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -16,8 +16,9 @@ class AdminAccountsController extends Controller
 {
     public function index(): View
     {
+        AccountActivity::deactivateDormantStudents();
         $users = User::query()
-            ->with('role')
+            ->with(['role', 'student'])
             ->when(! request()->user()->isAdmin(), fn ($query) => $query->whereDoesntHave('role', fn ($roles) => $roles->where('is_super_admin', true)))
             ->orderBy('name')
             ->paginate(15);
@@ -55,7 +56,6 @@ class AdminAccountsController extends Controller
             'account' => $user,
             'roles' => Role::query()->where('is_super_admin', false)->orderBy('name')->get(),
             'gradeLevels' => GradeLevel::with('sections')->orderBy('name')->get(),
-            'subjects' => Subject::orderBy('name')->get(),
         ]);
     }
 
@@ -89,6 +89,16 @@ class AdminAccountsController extends Controller
         $user->delete();
 
         return redirect()->route('admin.accounts')->with('status', 'User deleted successfully.');
+    }
+
+    public function updateStatus(Request $request, User $user): RedirectResponse
+    {
+        abort_unless($request->user()->canManage($user), 403);
+        abort_unless($user->isStudent(), 404);
+        $validated = $request->validate(['status' => ['required', \Illuminate\Validation\Rule::in(['active', 'inactive'])]]);
+        AccountActivity::setStudentStatus($user, $validated['status']);
+
+        return back()->with('status', 'Student account status updated.');
     }
 
     private function validatedAccount(Request $request, ?User $user = null): array

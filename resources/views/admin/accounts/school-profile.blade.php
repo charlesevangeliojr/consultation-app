@@ -2,18 +2,11 @@
 <form method="POST" action="{{ route('admin.accounts.school-profile', $account) }}" class="account-form mt-8">
     @csrf @method('PUT')
     <section class="account-panel">
-        <h3 class="account-panel-heading">{{ $account->isStudent() ? 'Student school profile' : 'Teacher subjects & consultation permission' }}</h3>
+        <h3 class="account-panel-heading">{{ $account->isStudent() ? 'Student school profile' : 'Teacher consultation permission' }}</h3>
         <div class="account-panel-body account-fields">
             @if(session('status'))<p role="status" class="text-emerald-300">{{ session('status') }}</p>@endif
             @if($errors->any())<div role="alert" class="account-error">@foreach($errors->all() as $message)<p>{{ $message }}</p>@endforeach</div>@endif
             @if($account->isTeacher())
-                <div>
-                    <label for="teacher-subjects">Subjects handled</label>
-                    <select id="teacher-subjects" name="subject_ids[]" multiple size="5" required class="account-input">
-                        @foreach($subjects as $subject)<option value="{{ $subject->id }}" @selected(in_array($subject->id, old('subject_ids', $account->teacher?->subjects->pluck('id')->all() ?? [])))>{{ $subject->name }}</option>@endforeach
-                    </select>
-                    <p class="account-help">Select one or more subjects. Ctrl/Cmd selects multiple options on desktop.</p>
-                </div>
                 <div>
                     <label for="consultation_approved">Consultation permission</label>
                     <select id="consultation_approved" name="consultation_approved" class="account-input">
@@ -31,7 +24,6 @@
                 <div><label for="school-birthday">Date of birth</label><input id="school-birthday" name="birthday" type="date" max="{{ today()->subDay()->toDateString() }}" value="{{ old('birthday', $student?->birthday?->toDateString()) }}" class="account-input"></div>
                 <div><label for="school-gender">Sex</label><select id="school-gender" name="gender" class="account-input"><option value="">Select sex</option>@foreach(['Male', 'Female'] as $sex)<option @selected(old('gender', $student?->gender) === $sex)>{{ $sex }}</option>@endforeach</select></div>
                 <div><label for="school-address">Address</label><textarea id="school-address" name="address" maxlength="2000" class="account-input">{{ old('address', $student?->address) }}</textarea></div>
-                <div><label for="school-status">Student status</label><select id="school-status" name="status" class="account-input">@foreach(['active', 'inactive'] as $status)<option @selected(old('status', $student?->status ?? 'active') === $status)>{{ $status }}</option>@endforeach</select></div>
             @endif
         </div>
     </section>

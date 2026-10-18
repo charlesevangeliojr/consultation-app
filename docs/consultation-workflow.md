@@ -1,5 +1,9 @@
 # School consultation workflow
 
+For a plain-language explanation of all user-facing features, read the
+[App features and user guide](app-features.md). This document contains the more
+detailed workflow, setup, and verification reference.
+
 ## Apply the schema
 
 Run `php artisan migrate` on an existing installation. This adds school catalogs,
@@ -11,25 +15,45 @@ can be assigned a grade and section through Accounts.
 
 ## School setup (admin)
 
-1. Open **School lists**. Create grade levels, sections under each grade, and subjects.
+1. Open **School setup → Academic lists**. Create grade levels and sections under each grade.
    New choices immediately appear during registration. Names can be edited, but
    options referenced by profiles or sections cannot be deleted.
 2. Open **Accounts → Edit** to correct names/emails and the separate school profile.
-   Student profiles include class, LRN, contact, birthday, sex, address, and status.
-   Teacher profiles include subjects and consultation permission.
+   Student profiles include class, LRN, contact, birthday, sex, and address.
+   Student Active/Inactive status is managed separately under **Account activity & status**.
+   Teacher profiles provide consultation permission without a subject selector.
 3. Approve a teacher's **Consultation permission** to allow publishing availability
    and confirming requests. This is a teacher-level permission, not per-schedule
    approval. Revocation blocks new publication, booking, and confirmation, but
    preserves existing bookings; teachers can still reject/cancel them.
-4. Under **Settings**, choose queue visibility: teacher choice, hide all, or show all.
+4. Under **School setup → School settings**, choose queue visibility: teacher choice, hide all, or show all.
    School-wide rules override teacher preferences. Teachers and authorized admins
    can always see student names; other students see names only when permitted.
    Consultation reasons are never shown to other students.
-5. **Consultation monitoring** is read-only. Admin cannot approve student bookings.
+5. **Overview → Consultations** is read-only monitoring. Admin cannot approve student bookings.
 
 School lists use the existing `settings` view/edit permissions. Editing school
 profiles uses `accounts` edit permission and account hierarchy checks. Monitoring
 uses `dashboard` view permission.
+
+Desktop navigation groups pages under Overview, People & access, and School setup.
+On mobile, **Open admin menu** opens the same permission-filtered groups in a
+scrollable drawer. Escape, the close button, or a backdrop click dismisses it;
+selecting a link closes the drawer before navigation. Bottom shortcuts remain
+available, and Accounts/roles screens also provide section tabs.
+
+The optional admin-only browser check covers 320–1440px viewports, all main admin
+pages, touch targets, keyboard dismissal/focus return, Turbo navigation, desktop
+resize, and short landscape scrolling:
+
+```sh
+node tests/browser/admin-navigation.cjs
+```
+
+It requires Playwright and a running local app (default `http://127.0.0.1:8092`).
+Set `APP_TEST_URL`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` to use another local server
+or administrator account; defaults are the local default-seeder admin credentials.
+`PLAYWRIGHT_MODULE` and `CHROME_PATH` support external browser-tool installations.
 
 ## Teacher workflow
 
@@ -107,7 +131,11 @@ uses `dashboard` view permission.
   cells also show counts and status-colored previews. A rose circle marks Today,
   and a rose outline marks the selected date. The legend and date tooltips explain
   every marker; empty months explain why no date indicators are displayed.
-- Register with one or more admin-defined subjects; approval is initially off.
+- Register with name, email, and password; approval is initially off. Subjects are
+  not required during registration. Admin subject creation, editing, deletion,
+  assignment, and monitoring labels have been removed. Existing subject records
+  and assignments are preserved for historical data; teachers describe their
+  support through their consultation offerings.
 - Set the maximum time per consultation (**30 minutes or 1 hour**), automatic/manual booking approval, and
   student-name visibility in **Consultation settings**.
 - Once approved, publish a future date, start/end time, and location. Availability
@@ -127,8 +155,11 @@ uses `dashboard` view permission.
 
 ## Student workflow
 
-- Register with a grade and a section belonging to that grade.
-- Browse approved teachers, their subjects, monthly calendar, available time ranges,
+- Register with a unique 12-digit LRN, a grade, and a section belonging to that
+  grade. Student registration does not require email. Students sign in with
+  **LRN + password**; teachers continue to use **email + password** at the shared
+  portal login. An optional student profile email is not a portal login identifier.
+- Browse approved teachers, their offerings, monthly calendar, available time ranges,
   and time-ordered queues. Enter a required consultation reason when booking.
 - Select **Start time** and **End time**, with duration no longer than the teacher's
   30- or 60-minute maximum. For example, 1:00–2:00 PM is valid inside a 1:00–5:00 PM
@@ -196,7 +227,8 @@ New accounts all use the local testing password `DemoConsult!2026`:
 - Teachers: `demo.teacher1@example.com` (manual approval, names hidden),
   `demo.teacher2@example.com` (auto-approval, names shown), and
   `demo.teacher3@example.com` (awaiting admin approval).
-- Students: `demo.student1@example.com` through `demo.student4@example.com`.
+- Students: LRNs `990000000001` through `990000000004` (their stored demo emails
+  are `demo.student1@example.com` through `demo.student4@example.com`).
 - Teachers and students sign in at `/portal/login`.
 
 Do not use these publicly documented demo credentials in a deployed school app.
@@ -262,13 +294,17 @@ cards, a sticky save bar, and an unsaved-changes indicator. School assignments
 and name remain admin-managed. Students can crop an optional photo locally
 before saving a 512×512 JPEG; cancellation keeps the previous selection.
 Other student field requirements and server-side validation are unchanged.
-Student addresses now have Region, Province, City/Municipality, Barangay,
-House/Unit, and Postal code fields using the same hierarchical suggestions as
-teacher profiles. Updating any address field requires region, city, and barangay;
-province, house/unit, and postal code remain optional. A saved structured address
-must remain complete. Manual entry is supported offline. The combined address is
-composed when the structured fields are saved; legacy combined addresses are
-shown read-only and preserved when unrelated details are edited.
+Student addresses have Region, Province, City/Municipality, Barangay, and
+House/Unit fields using the same hierarchical suggestions as teacher profiles.
+Postal code has been removed from student registration and profile forms; teacher
+profiles retain their optional postal code. Updating any student address field
+requires region, city, and barangay; province and house/unit remain optional.
+A saved structured address must remain complete. Manual entry is supported when
+the suggestions service is unavailable; saving still requires an app connection.
+The combined address is composed when the structured fields are saved. Recognizable
+legacy registration addresses in `[house,] region, barangay, city, [province, postal]`
+order prefill the individual fields; there is no extra read-only saved-address block.
+Unrecognized legacy strings remain stored when unrelated details are edited.
 Profile scripts are registered on workspace entry so photo controls also work
 after Turbo navigation rather than only after a full page reload.
 
@@ -296,3 +332,31 @@ Run `php artisan test`. Workflow tests cover registration catalogs, teacher
 permission, teacher-only booking approval, chosen-time duration limits, privacy overrides,
 queue order, cancellation/rebooking, history, invalid ranges, and conflicts.
 Run `node --test tests/js/registration.test.cjs` for registration step validation.
+
+## Account activity and student status
+
+Admin **Accounts** shows online/offline presence and last-seen activity for users,
+plus Active/Inactive labels for students. **Accounts → Edit → Account activity & status**
+lets an authorized admin change student status without submitting school-profile
+fields. Students cannot set their own status through their personal profile.
+
+Online means authenticated activity within five minutes without a later logout.
+Visible workspace tabs send a heartbeat each minute. Offline is separate from
+Inactive; neither online presence nor the Active label establishes consultation
+availability or school enrollment. Active/Inactive is currently a monitoring label
+and does not block login or booking.
+
+Student accounts become inactive after two years without activity. Existing
+accounts receive a baseline at migration, new accounts at creation, and admin
+reactivation starts a fresh inactivity period. Returning online preserves an
+inactive status. The scheduler runs `accounts:deactivate-inactive` daily, while
+the Accounts list and authenticated activity also reconcile eligible records.
+The command can be run manually:
+
+```sh
+php artisan accounts:deactivate-inactive
+```
+
+Keep the scheduler running as described above for checks without page traffic.
+Run `php artisan test --filter=AccountActivityTest` to verify presence, expiry,
+inactivity boundaries, permission checks, and admin status changes.

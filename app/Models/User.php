@@ -49,7 +49,17 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'role_id' => 'integer',
+            'last_seen_at' => 'datetime',
+            'last_logged_out_at' => 'datetime',
+            'inactivity_reference_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            $user->inactivity_reference_at ??= now();
+        });
     }
 
     public function isAdmin(): bool
@@ -66,6 +76,13 @@ class User extends Authenticatable
     public function isStudent(): bool
     {
         return str_contains(mb_strtolower($this->role?->name ?? ''), 'student');
+    }
+
+    public function isOnline(): bool
+    {
+        return $this->last_seen_at !== null
+            && $this->last_seen_at->gt(now()->subMinutes(5))
+            && ($this->last_logged_out_at === null || $this->last_seen_at->gt($this->last_logged_out_at));
     }
 
     public function canAccess(string $module, string $action): bool

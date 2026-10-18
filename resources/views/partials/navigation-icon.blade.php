@@ -7,6 +7,8 @@
         @case('monitor')<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M6 13l4-4 3 3 5-5"/>@break
         @case('settings')<path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="currentColor"/><circle cx="15" cy="17" r="3" fill="currentColor"/>@break
         @case('plus')<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 7v10M7 12h10"/>@break
+        @case('shield')<path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/>@break
+        @case('logout')<path d="M9 5H4v14h5M14 8l4 4-4 4M9 12h12"/>@break
         @default<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>
     @endswitch
 </svg>

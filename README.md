@@ -9,6 +9,11 @@
 
 ## School consultation app
 
+For an overview of what the app does, read the **[App features and user guide](docs/app-features.md)**.
+It explains student, teacher, and admin features, consultation rules, privacy,
+profiles, and account activity in plain language. The [documentation index](docs/README.md)
+links to all guides.
+
 See [the consultation workflow guide](docs/consultation-workflow.md) for database
 setup, admin school lists and approvals, teacher preferences, student booking,
 queue privacy, cancellation rules, and verification commands.
@@ -47,11 +52,32 @@ php artisan serve
 Open **http://127.0.0.1:8000**. Student and teacher login is at `/portal/login`;
 administrator login is at `/admin/login`.
 
-In a separate terminal, keep the scheduler running so unanswered proposed-time
-requests are automatically rejected when their requested start time arrives:
+In a separate terminal, keep the scheduler running for automatic request expiry
+and the daily student-account inactivity check:
 
 ```sh
 php artisan schedule:work
+```
+
+### Account activity monitoring
+
+Under **Admin → User Management → Accounts**, administrators can view online/offline
+presence and last-seen timestamps. Open a student's **Edit** page to manage
+**Active / Inactive** under **Account activity & status**.
+
+- Online means authenticated activity within the last five minutes; visible portal
+  tabs send an activity heartbeat every minute. Signing out marks the account offline.
+- Student accounts are marked inactive after two years without activity. Existing
+  accounts start their tracking period when the activity migration is applied;
+  previous activity is unknown. New accounts start at creation.
+- Admin reactivation resets the two-year inactivity period. Returning online does
+  not override an inactive status. Status is an administrative monitoring label,
+  separate from online presence, and does not itself block login or certify enrollment.
+- The scheduler checks daily. The admin account list also reconciles inactive
+  students when opened. To run the check manually:
+
+```sh
+php artisan accounts:deactivate-inactive
 ```
 
 ## About Laravel

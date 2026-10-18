@@ -1,12 +1,12 @@
 @extends('admin.layout')
 
-@section('title', 'Roles')
+@section('title', 'Roles & permissions')
 
 @section('content')
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
-            <p class="text-sm font-semibold uppercase tracking-[0.25em] text-rose-400">User Management</p>
-            <h2 class="mt-3 text-3xl font-bold sm:text-4xl">Roles</h2>
+            <p class="text-sm font-semibold uppercase tracking-[0.25em] text-rose-400">People &amp; access</p>
+            <h2 class="mt-3 text-3xl font-bold sm:text-4xl">Roles &amp; permissions</h2>
             <p class="mt-3 text-slate-400">Reusable permission sets for user accounts.</p>
         </div>
         @if (auth()->user()->canAccess('accounts', 'add'))

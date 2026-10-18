@@ -8,7 +8,6 @@ use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\User;
 use App\Models\GradeLevel;
-use App\Models\Subject;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,7 +32,6 @@ class RegistrationController extends Controller
         return view('auth.register', [
             'selectedRole' => $role,
             'gradeLevels' => GradeLevel::with('sections')->orderBy('name')->get(),
-            'subjects' => Subject::orderBy('name')->get(),
         ]);
     }
 
@@ -44,7 +42,7 @@ class RegistrationController extends Controller
             'middle_name' => ['nullable', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
             'suffix' => ['nullable', 'string', 'max:30'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['exclude_unless:role,teacher', 'required', 'string', 'email', 'max:255', 'unique:users,email'],
             'role' => ['required', Rule::in(['student', 'teacher'])],
             'password' => ['required', 'confirmed', 'string', 'min:8'],
             'contact_number' => ['required_if:role,student', 'regex:/^9[0-9]{9}$/'],
@@ -55,12 +53,9 @@ class RegistrationController extends Controller
             'barangay' => ['nullable', 'string', 'max:150'],
             'city' => ['nullable', 'string', 'max:150'],
             'province' => ['nullable', 'string', 'max:150'],
-            'postal_code' => ['nullable', 'string', 'max:20'],
             'lrn' => ['required_if:role,student', 'digits:12', 'unique:students,lrn'],
             'grade_level_id' => ['exclude_unless:role,student', 'required', 'integer', 'exists:grade_levels,id'],
             'section_id' => ['exclude_unless:role,student', 'required', 'integer', Rule::exists('sections', 'id')->where('grade_level_id', $request->input('grade_level_id'))],
-            'subject_ids' => ['exclude_unless:role,teacher', 'required', 'array', 'min:1'],
-            'subject_ids.*' => ['integer', 'distinct', 'exists:subjects,id'],
         ]);
 
         $user = DB::transaction(function () use ($validated) {
@@ -75,14 +70,13 @@ class RegistrationController extends Controller
 
             $user = User::create([
                 'name' => $name,
-                'email' => $validated['email'],
+                'email' => $validated['email'] ?? null,
                 'password' => Hash::make($validated['password']),
                 'role_id' => $role->id,
             ]);
 
             if ($validated['role'] === 'teacher') {
-                $teacher = Teacher::create(['user_id' => $user->id]);
-                $teacher->subjects()->sync($validated['subject_ids']);
+                Teacher::create(['user_id' => $user->id]);
             } else {
                 $address = collect([
                     $validated['house_number'] ?? null,
@@ -90,7 +84,6 @@ class RegistrationController extends Controller
                     $validated['barangay'] ?? null,
                     $validated['city'] ?? null,
                     $validated['province'] ?? null,
-                    $validated['postal_code'] ?? null,
                 ])->filter()->implode(', ');
                 Student::create([
                     'user_id' => $user->id,
@@ -98,6 +91,11 @@ class RegistrationController extends Controller
                     'birthday' => $validated['birthday'] ?? null,
                     'gender' => $validated['gender'] ?? null,
                     'address' => $address ?: null,
+                    'house_number' => $validated['house_number'] ?? null,
+                    'region' => $validated['region'] ?? null,
+                    'province' => $validated['province'] ?? null,
+                    'city' => $validated['city'] ?? null,
+                    'barangay' => $validated['barangay'] ?? null,
                     'lrn' => $validated['lrn'] ?? null,
                     'grade_level_id' => $validated['grade_level_id'],
                     'section_id' => $validated['section_id'],

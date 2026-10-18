@@ -6,5 +6,6 @@
         <a href="{{ route('admin.accounts') }}" class="account-button account-button-secondary">Cancel</a>
     </div>
     @include('admin.accounts.form', ['formAction' => route('admin.accounts.update', $account), 'isEditing' => true])
+    @include('admin.accounts.activity')
     @include('admin.accounts.school-profile')
 @endsection

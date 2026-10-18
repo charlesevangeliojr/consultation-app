@@ -59,7 +59,7 @@ class StudentPortalDesignTest extends TestCase
         Storage::disk('public')->assertExists($user->student->profile_photo_path);
         $this->get(route('consultations.student-profile.edit'))->assertOk()
             ->assertSee('/storage/'.$user->student->profile_photo_path, false)
-            ->assertSee('12 Fictional Street, Quezon City');
+            ->assertDontSee('Saved address');
     }
 
     public function test_dashboard_uses_compact_mobile_summary_labels_without_changing_desktop_labels(): void
@@ -77,7 +77,7 @@ class StudentPortalDesignTest extends TestCase
         $user = $this->student();
         $this->actingAs($user)->from(route('consultations.student-profile.edit'))
             ->put(route('consultations.student-profile.update'), ['email' => 'invalid', 'status' => 'invalid', 'lrn' => '12'])
-            ->assertSessionHasErrors(['email', 'status', 'lrn']);
+            ->assertSessionHasErrors(['email', 'lrn']);
         $this->get(route('consultations.student-profile.edit'))->assertOk()
             ->assertSee('Please review your profile details')->assertSee('role="alert"', false);
         $this->assertSame($user->email, $user->fresh()->email);
@@ -91,14 +91,37 @@ class StudentPortalDesignTest extends TestCase
         $this->put(route('consultations.student-profile.update'), [])->assertForbidden();
     }
 
+    public function test_student_profile_does_not_require_or_allow_changing_account_status(): void
+    {
+        $user = $this->student();
+        $this->assertSame('active', $user->student->status);
+        $this->actingAs($user)->get(route('consultations.student-profile.edit'))->assertOk()
+            ->assertDontSee('name="status"', false)->assertDontSee('Account status');
+
+        $this->put(route('consultations.student-profile.update'), ['contact_number' => '+639171234567'])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('active', $user->student->fresh()->status);
+
+        $this->put(route('consultations.student-profile.update'), ['status' => 'inactive'])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('active', $user->student->fresh()->status);
+
+        $user->student->update(['status' => 'inactive']);
+        $this->put(route('consultations.student-profile.update'), ['status' => 'active'])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('inactive', $user->student->fresh()->status);
+    }
+
     public function test_student_structured_address_supports_ncr_manual_entry_and_restores_fields(): void
     {
         $user = $this->student();
-        $details = ['email' => $user->email, 'status' => 'active', 'house_number' => '12 Fictional Street', 'region' => 'National Capital Region (NCR)', 'province' => null, 'city' => 'Quezon City', 'barangay' => 'Diliman', 'postal_code' => '1101'];
+        $details = ['email' => $user->email, 'status' => 'active', 'house_number' => '12 Fictional Street', 'region' => 'National Capital Region (NCR)', 'province' => null, 'city' => 'Quezon City', 'barangay' => 'Diliman'];
         $this->actingAs($user)->put(route('consultations.student-profile.update'), $details)->assertSessionHasNoErrors();
-        $this->assertSame('12 Fictional Street, Diliman, Quezon City, National Capital Region (NCR), 1101', $user->student->fresh()->address);
+        $this->assertSame('12 Fictional Street, Diliman, Quezon City, National Capital Region (NCR)', $user->student->fresh()->address);
         $this->get(route('consultations.student-profile.edit'))->assertOk()->assertSee('data-address-suggestions', false)
-            ->assertSee('address-suggestions.js')->assertSee('value="Quezon City"', false)->assertSee('value="Diliman"', false);
+            ->assertSee('address-suggestions.js')->assertSee('value="Quezon City"', false)->assertSee('value="Diliman"', false)
+            ->assertDontSee('Saved address')
+            ->assertDontSee('name="postal_code"', false);
         // The server does not depend on the external suggestions API.
         $details['region'] = 'Manually typed region';
         $details['city'] = 'Manually typed city';
@@ -123,8 +146,39 @@ class StudentPortalDesignTest extends TestCase
     {
         $user = $this->student();
         $user->student->update(['address' => 'Original saved address']);
-        $this->actingAs($user)->put(route('consultations.student-profile.update'), ['email' => $user->email, 'status' => 'active', 'region' => '', 'city' => '', 'barangay' => '', 'province' => '', 'house_number' => '', 'postal_code' => ''])->assertSessionHasNoErrors();
+        $this->actingAs($user)->put(route('consultations.student-profile.update'), ['email' => $user->email, 'status' => 'active', 'region' => '', 'city' => '', 'barangay' => '', 'province' => '', 'house_number' => ''])->assertSessionHasNoErrors();
         $this->assertSame('Original saved address', $user->student->fresh()->address);
-        $this->get(route('consultations.student-profile.edit'))->assertOk()->assertSee('Previously saved: Original saved address');
+        $this->get(route('consultations.student-profile.edit'))->assertOk()->assertDontSee('Saved address');
+    }
+
+    public function test_legacy_registration_address_prefills_individual_fields_and_can_be_saved(): void
+    {
+        $user = $this->student();
+        $user->student->update(['address' => 'Davao Region, Marapangi, City of Davao, Davao Del Sur']);
+        $this->actingAs($user)->get(route('consultations.student-profile.edit'))->assertOk()
+            ->assertSee('value="Davao Region"', false)
+            ->assertSee('value="Marapangi"', false)
+            ->assertSee('value="City of Davao"', false)
+            ->assertSee('value="Davao Del Sur"', false)
+            ->assertDontSee('Saved address')->assertDontSee('This address is kept');
+
+        $this->put(route('consultations.student-profile.update'), [
+            'status' => 'active', 'region' => 'Davao Region', 'barangay' => 'Marapangi',
+            'city' => 'City of Davao', 'province' => 'Davao Del Sur', 'house_number' => '',
+        ])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('students', [
+            'user_id' => $user->id, 'region' => 'Davao Region', 'barangay' => 'Marapangi',
+            'city' => 'City of Davao', 'province' => 'Davao Del Sur',
+        ]);
+    }
+
+    public function test_legacy_registration_address_restores_house_number_and_omits_postal_code(): void
+    {
+        $user = $this->student();
+        $user->student->update(['address' => '12 Example Street, Davao Region, Marapangi, City of Davao, Davao Del Sur, 8000']);
+        $this->actingAs($user)->get(route('consultations.student-profile.edit'))->assertOk()
+            ->assertSee('value="12 Example Street"', false)->assertSee('value="Davao Region"', false)
+            ->assertSee('value="Marapangi"', false)->assertSee('value="City of Davao"', false)
+            ->assertSee('value="Davao Del Sur"', false)->assertDontSee('name="postal_code"', false);
     }
 }

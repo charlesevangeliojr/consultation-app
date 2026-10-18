@@ -6,7 +6,6 @@
 <section class="mt-8"><h3 class="text-xl font-semibold">Teachers &amp; permission</h3><div class="mt-4 grid gap-3 sm:grid-cols-2">
 @forelse($teachers as $teacher)<article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
     <p class="font-semibold">{{ $teacher->name }}</p><p class="mt-2 text-sm {{ $teacher->teacher?->consultation_approved ? 'text-emerald-300' : 'text-amber-300' }}">{{ $teacher->teacher?->consultation_approved ? 'Approved for consultations' : 'Awaiting approval / revoked' }}</p>
-    <p class="mt-2 text-xs text-slate-400">{{ $teacher->teacher?->subjects->pluck('name')->join(', ') ?: 'No subjects assigned' }}</p>
     @if(auth()->user()->canManage($teacher))<a href="{{ route('admin.accounts.edit', $teacher) }}" class="mt-3 inline-block text-sm text-rose-300">Edit profile / permission →</a>@endif
 </article>@empty<p class="text-slate-500">No teachers registered.</p>@endforelse
 </div></section>

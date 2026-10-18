@@ -6,18 +6,26 @@ Do not use these accounts or passwords in a deployed school system.
 
 ## Login credentials
 
+For an explanation of the features available to each account, see the
+[App features and user guide](app-features.md).
+
 **Password for all eight demo accounts:** `DemoConsult!2026`
 
-| Role | Name | Email | Login page |
+| Role | Name | Sign-in identifier | Login page |
 | --- | --- | --- | --- |
 | Admin | Demo School Administrator | `demo.admin@example.com` | `/admin/login` |
 | Teacher | Maria Santos | `demo.teacher1@example.com` | `/portal/login` |
 | Teacher | Daniel Reyes | `demo.teacher2@example.com` | `/portal/login` |
 | Teacher | Angela Cruz | `demo.teacher3@example.com` | `/portal/login` |
-| Student | Alex Mendoza | `demo.student1@example.com` | `/portal/login` |
-| Student | Bea Garcia | `demo.student2@example.com` | `/portal/login` |
-| Student | Carlo Ramos | `demo.student3@example.com` | `/portal/login` |
-| Student | Diana Flores | `demo.student4@example.com` | `/portal/login` |
+| Student | Alex Mendoza | LRN `990000000001` | `/portal/login` |
+| Student | Bea Garcia | LRN `990000000002` | `/portal/login` |
+| Student | Carlo Ramos | LRN `990000000003` | `/portal/login` |
+| Student | Diana Flores | LRN `990000000004` | `/portal/login` |
+
+Students use **LRN + password**, not their stored demo email, to sign in. The demo
+student records still have emails `demo.student1@example.com` through
+`demo.student4@example.com` for sample account identification. Teachers and admins
+use the email identifiers in the table.
 
 Maria is approved, handles Mathematics and Science, manually
 approves requests, and hides queue names. Daniel is approved, handles English and
@@ -44,7 +52,8 @@ Teachers may update their consultation description without admin confirmation.
 
 - Grades 10, 11, and 12, with two sections each: Newton/Galileo,
   Einstein/Curie, and Tesla/Darwin.
-- Five subjects and teacher subject assignments.
+- Five historical subjects and teacher subject assignments. These are retained
+  sample data; subjects are no longer managed in admin or required at registration.
 - Four student profiles with class assignments and fictional contact details.
 - Six active availability windows on October 15–17, 2026.
 - Four active bookings (pending/confirmed).

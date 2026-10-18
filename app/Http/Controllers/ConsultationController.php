@@ -23,9 +23,27 @@ class ConsultationController extends Controller
 
     public function authenticate(Request $request): RedirectResponse
     {
-        $credentials = $request->validate(['email' => ['required', 'email'], 'password' => ['required', 'string']]);
+        $validated = $request->validate(['login' => ['required', 'string', 'max:255', 'regex:/^(?:[0-9]{12}|[^\s@]+@[^\s@]+\.[^\s@]+)$/'], 'password' => ['required', 'string']]);
+        $isLrn = preg_match('/^[0-9]{12}$/', $validated['login']) === 1;
+        $credentials = [
+            'password' => $validated['password'],
+            function ($query) use ($validated, $isLrn) {
+                if ($isLrn) {
+                    $query->whereHas('student', fn ($student) => $student->where('lrn', $validated['login']));
+                } else {
+                    $query->where('email', $validated['login']);
+                }
+                $query->whereHas('role', function ($role) use ($isLrn) {
+                    if ($isLrn) {
+                        $role->whereRaw('LOWER(name) LIKE ?', ['%student%']);
+                    } else {
+                        $role->whereRaw('LOWER(name) NOT LIKE ?', ['%student%']);
+                    }
+                });
+            },
+        ];
         if (! auth()->attempt($credentials)) {
-            return back()->withErrors(['email' => 'These credentials do not match our records.'])->onlyInput('email');
+            return back()->withErrors(['login' => 'These credentials do not match our records.'])->onlyInput('login');
         }
 
         $request->session()->regenerate();
@@ -33,7 +51,7 @@ class ConsultationController extends Controller
             auth()->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
-            return redirect()->route('portal.login')->withErrors(['email' => 'This account does not have a Student, Teacher, or Administrator role.']);
+            return redirect()->route('portal.login')->withErrors(['login' => 'This account does not have a Student, Teacher, or Administrator role.']);
         }
 
         return redirect()->route('consultations.home');
@@ -328,6 +346,7 @@ class ConsultationController extends Controller
 
     public function logout(Request $request): RedirectResponse
     {
+        $request->user()->forceFill(['last_logged_out_at' => now()])->saveQuietly();
         auth()->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

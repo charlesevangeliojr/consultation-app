@@ -1,11 +1,11 @@
 @extends('admin.layout')
 
-@section('title', 'Settings')
+@section('title', 'School settings')
 
 @section('content')
     <p class="text-sm font-semibold uppercase tracking-[0.25em] text-rose-400">Administration</p>
-    <h2 class="mt-3 text-3xl font-bold sm:text-4xl">Settings</h2>
-    <p class="mt-3 max-w-2xl text-slate-400">Update the project name and logo used across the site.</p>
+    <h2 class="mt-3 text-3xl font-bold sm:text-4xl">School settings</h2>
+    <p class="mt-3 max-w-2xl text-slate-400">Manage school branding and student-name visibility in consultation queues.</p>
 
     @if (session('status'))
         <p role="status" class="mt-6 max-w-2xl rounded-lg border border-emerald-900 bg-emerald-950/50 p-4 text-sm text-emerald-200">{{ session('status') }}</p>

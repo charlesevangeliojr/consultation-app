@@ -42,6 +42,7 @@ Route::post('/admin/login', [AdminLoginController::class, 'store'])->middleware(
 
 Route::get('/portal/login', [ConsultationController::class, 'login'])->name('portal.login');
 Route::post('/portal/login', [ConsultationController::class, 'authenticate'])->middleware('throttle:5,1')->name('portal.login.store');
+Route::post('/account/activity', fn () => response()->noContent())->middleware(['auth', 'throttle:10,1'])->name('account.activity');
 Route::middleware('guest')->group(function () {
     Route::get('/register', [RegistrationController::class, 'create'])->name('register');
     Route::post('/register', [RegistrationController::class, 'store'])->middleware('throttle:5,1')->name('register.store');
@@ -91,6 +92,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('/accounts', [AdminAccountsController::class, 'store'])->middleware('permission:accounts,add')->name('accounts.store');
     Route::get('/accounts/{user}/edit', [AdminAccountsController::class, 'edit'])->middleware('permission:accounts,edit')->name('accounts.edit');
     Route::put('/accounts/{user}', [AdminAccountsController::class, 'update'])->middleware('permission:accounts,edit')->name('accounts.update');
+    Route::patch('/accounts/{user}/status', [AdminAccountsController::class, 'updateStatus'])->middleware('permission:accounts,edit')->name('accounts.status');
     Route::delete('/accounts/{user}', [AdminAccountsController::class, 'destroy'])->middleware('permission:accounts,delete')->name('accounts.destroy');
     Route::post('/logout', [AdminLoginController::class, 'destroy'])->name('logout');
 });
