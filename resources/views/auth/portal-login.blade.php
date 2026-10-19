@@ -7,8 +7,11 @@
     @if($siteSettings->favicon_path)<link rel="icon" href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($siteSettings->favicon_path) }}">@endif
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="{{ asset('js/password-visibility.js') }}" defer></script>
+    @include('partials.theme-head')
 </head>
 <body class="flex min-h-screen items-center justify-center bg-slate-950 px-5 py-8 text-slate-100">
+    @include('partials.pwa-ui')
+    @include('partials.theme-auth-navigation')
     <main class="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-2xl">
         @include('auth.partials.login-brand')
         <p class="text-xs font-semibold uppercase tracking-[.2em] text-rose-300">Student &amp; teacher sign in</p>

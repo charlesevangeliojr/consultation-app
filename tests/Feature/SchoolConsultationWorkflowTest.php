@@ -231,7 +231,7 @@ class SchoolConsultationWorkflowTest extends TestCase
     {
         $admin = $this->account('Super Admin');
         $this->actingAs($admin)->get(route('admin.school'))->assertOk();
-        $this->post(route('admin.school.store', 'grade-levels'), ['name' => 'Grade 11'])->assertSessionHasNoErrors();
+        $this->post(route('admin.school.store', 'grade-levels'), ['name' => 'Grade 11'])->assertNotFound();
         $grade = GradeLevel::firstOrFail();
         $this->post(route('admin.school.store', 'sections'), ['name' => 'Einstein', 'grade_level_id' => $grade->id])->assertSessionHasNoErrors();
         $section = Section::firstOrFail();
@@ -242,11 +242,11 @@ class SchoolConsultationWorkflowTest extends TestCase
         $this->assertSame($section->id, $student->student->fresh()->section_id);
         $this->get(route('admin.accounts.edit', $student))->assertOk()->assertSee('Student school profile');
         $this->delete(route('admin.school.destroy', ['sections', $section->id]))->assertSessionHasErrors('catalog');
-        $this->delete(route('admin.school.destroy', ['grade-levels', $grade->id]))->assertSessionHasErrors('catalog');
+        $this->delete(route('admin.school.destroy', ['grade-levels', $grade->id]))->assertNotFound();
         $this->put(route('admin.school.update', ['sections', $section->id]), ['name' => 'Curie'])->assertSessionHasNoErrors();
         $unused = GradeLevel::create(['name' => 'Unused grade']);
-        $this->delete(route('admin.school.destroy', ['grade-levels', $unused->id]))->assertSessionHasNoErrors();
-        $this->assertDatabaseMissing('grade_levels', ['id' => $unused->id]);
+        $this->delete(route('admin.school.destroy', ['grade-levels', $unused->id]))->assertNotFound();
+        $this->assertDatabaseHas('grade_levels', ['id' => $unused->id]);
     }
 
     public function test_admin_subject_management_is_removed(): void

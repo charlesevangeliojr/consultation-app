@@ -34,8 +34,10 @@
         <script src="{{ asset('js/address-suggestions.js') }}" defer data-turbo-eval="false"></script>
     @endif
     <link rel="stylesheet" href="{{ asset('css/form-controls.css') }}">
+    @include('partials.theme-head')
 </head>
 <body class="has-mobile-navigation min-h-screen bg-slate-950 text-slate-100 antialiased">
+    @include('partials.pwa-ui')
     @php
         $mobileItems = [];
         if (auth()->user()->isStudent()) {
@@ -62,10 +64,13 @@
                 <div class="flex min-w-0 items-center justify-between gap-3 px-3 py-3 sm:px-5 lg:px-6">
                     <a href="{{ route('consultations.home') }}" class="min-w-0 flex-1 truncate text-lg font-bold lg:hidden">{{ $siteSettings->name ?: config('app.name') }}<span class="text-rose-400">.</span></a>
                     <div class="hidden lg:block"><p class="text-xs text-slate-500">Student workspace</p><p class="mt-1 text-sm font-medium text-slate-200">{{ collect($mobileItems)->firstWhere('active', true)['label'] ?? 'Student portal' }}</p></div>
-                    <a href="{{ route('consultations.student-profile.edit') }}" aria-label="Edit your student profile" class="hidden min-w-0 items-center gap-2 text-sm text-slate-400 lg:flex lg:max-w-xs">
-                        @include('student.partials.avatar', ['avatarSize' => 'h-9 w-9'])<span class="truncate">{{ auth()->user()->name }}</span>
-                    </a>
-                    @include('partials.mobile-account-menu')
+                    <div class="theme-navbar-actions">
+                        @include('partials.theme-toggle')
+                        <a href="{{ route('consultations.student-profile.edit') }}" aria-label="Edit your student profile" class="hidden min-w-0 items-center gap-2 text-sm text-slate-400 lg:flex lg:max-w-xs">
+                            @include('student.partials.avatar', ['avatarSize' => 'h-9 w-9'])<span class="truncate">{{ auth()->user()->name }}</span>
+                        </a>
+                        @include('partials.mobile-account-menu')
+                    </div>
                 </div>
             </header>
             <main class="student-portal min-w-0 px-3 py-6 sm:px-5 sm:py-8 lg:px-6" id="student-workspace">
@@ -82,13 +87,16 @@
                 <div class="flex min-w-0 flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-5 lg:px-6">
                     <a href="{{ route('consultations.home') }}" class="min-w-0 flex-1 truncate text-lg font-bold lg:hidden">{{ $siteSettings->name ?: 'ConSync' }}<span class="text-rose-400">.</span></a>
                     <div class="hidden lg:block"><p class="text-xs text-slate-500">Teacher workspace</p><p class="mt-1 text-sm font-medium text-slate-200">{{ collect($mobileItems)->firstWhere('active', true)['desktopLabel'] ?? collect($mobileItems)->firstWhere('active', true)['label'] ?? 'Teacher portal' }}</p></div>
-                    <div class="hidden min-w-0 items-center gap-3 lg:flex">
-                        <a href="{{ route('consultations.teacher-profile.edit') }}" aria-label="Edit your teacher profile" class="flex min-w-0 items-center gap-2 text-sm text-slate-400 sm:max-w-xs">
-                            @include('teacher.partials.avatar', ['avatarSize' => 'h-9 w-9'])
-                            <span class="min-w-0 truncate">{{ auth()->user()->name }}</span>
-                        </a>
+                    <div class="theme-navbar-actions">
+                        @include('partials.theme-toggle')
+                        <div class="hidden min-w-0 items-center gap-3 lg:flex">
+                            <a href="{{ route('consultations.teacher-profile.edit') }}" aria-label="Edit your teacher profile" class="flex min-w-0 items-center gap-2 text-sm text-slate-400 sm:max-w-xs">
+                                @include('teacher.partials.avatar', ['avatarSize' => 'h-9 w-9'])
+                                <span class="min-w-0 truncate">{{ auth()->user()->name }}</span>
+                            </a>
+                        </div>
+                        @include('partials.mobile-account-menu')
                     </div>
-                    @include('partials.mobile-account-menu')
                 </div>
             </header>
             <main class="teacher-portal min-w-0 px-3 py-6 sm:px-5 sm:py-8 lg:px-6" id="teacher-workspace">

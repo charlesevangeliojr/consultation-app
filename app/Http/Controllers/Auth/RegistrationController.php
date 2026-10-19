@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class RegistrationController extends Controller
@@ -31,7 +32,7 @@ class RegistrationController extends Controller
 
         return view('auth.register', [
             'selectedRole' => $role,
-            'gradeLevels' => GradeLevel::with('sections')->orderBy('name')->get(),
+            'gradeLevels' => GradeLevel::forRegistration()->with('sections')->orderByRaw('LENGTH(name)')->orderBy('name')->get(),
         ]);
     }
 
@@ -54,11 +55,14 @@ class RegistrationController extends Controller
             'city' => ['nullable', 'string', 'max:150'],
             'province' => ['nullable', 'string', 'max:150'],
             'lrn' => ['required_if:role,student', 'digits:12', 'unique:students,lrn'],
-            'grade_level_id' => ['exclude_unless:role,student', 'required', 'integer', 'exists:grade_levels,id'],
+            'grade_level_id' => ['exclude_unless:role,student', 'required', 'integer', Rule::exists('grade_levels', 'id')->where('registration_enabled', true)->whereIn('name', GradeLevel::STANDARD_NAMES)],
             'section_id' => ['exclude_unless:role,student', 'required', 'integer', Rule::exists('sections', 'id')->where('grade_level_id', $request->input('grade_level_id'))],
         ]);
 
         $user = DB::transaction(function () use ($validated) {
+            if ($validated['role'] === 'student' && !GradeLevel::forRegistration()->whereKey($validated['grade_level_id'])->lockForUpdate()->first(['id'])) {
+                throw ValidationException::withMessages(['grade_level_id' => 'This grade is no longer available for registration. Please choose an available grade.']);
+            }
             $roleName = $validated['role'] === 'teacher' ? 'Teacher' : 'Student';
             $role = Role::query()->firstOrCreate(['name' => $roleName], ['is_super_admin' => false]);
             $name = collect([

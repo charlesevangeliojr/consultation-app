@@ -80,6 +80,69 @@ presence and last-seen timestamps. Open a student's **Edit** page to manage
 php artisan accounts:deactivate-inactive
 ```
 
+### Admin dashboard charts
+
+The admin dashboard includes six-month consultation activity and booking-status
+charts, monthly totals, and a reporting-month filter. Counts use scheduled
+consultation dates (in the application timezone), not the date a request was
+submitted. Expand **View monthly data** for the chart's underlying values.
+
+### Consultation calendar
+
+The app uses **Philippine Standard Time (`Asia/Manila`, UTC+8)** for schedules,
+date filters, reporting, activity, and automatic request expiry. Student/teacher
+time inputs are Philippine times, not the device's local timezone. After deploying
+the timezone change, run `php artisan config:clear` and restart any long-running
+scheduler/queue processes. Existing saved date/time values are not automatically
+shifted; see the workflow guide before converting historical UTC records.
+
+The admin **Consultations** page uses a month calendar. Select a date to see that
+day's availability and booking records, then select a booking for its full
+read-only details. Month navigation and **Today** support past and future dates;
+calendar markers count all bookings, including proposed requests and history.
+
+Teacher scheduling approval is managed from **Accounts → select a teacher →
+Scheduling permission**, or **Consultations → Teachers & permission**. Authorized
+admins can approve or revoke scheduling. Unapproved teachers cannot publish
+availability, receive new requests, or confirm bookings. Approval does not bypass
+required teacher profile setup or let administrators approve individual bookings.
+
+### Light and dark appearance
+
+All portals and public pages support light and dark mode. Use the sun/moon button
+in the **top navigation bar** to choose **Light mode** or **Dark mode**, on desktop
+and mobile. Login and registration screens have the same control at the top right.
+
+On the first visit, appearance follows your device preference. A manual choice
+is saved in this browser and shared across pages and tabs; it does not change
+other users' devices. Theme switching also works when browser storage is blocked,
+but the choice cannot persist after reloading in that case.
+
+### Install on a phone or tablet (PWA)
+
+On a supported phone or tablet, the app shows a centered **Install app** popup
+with a dark backdrop. Dismiss it with the close button, Escape, or a backdrop tap.
+When the browser supports its own install prompt, the button opens it; otherwise,
+**How to install** explains the browser menu or Safari's **Share → Add to Home
+Screen** flow. This installs a progressive web app, **not an APK download**.
+Dismissed suggestions stay hidden for seven days in that browser.
+
+- Deploy over **HTTPS** with the web server pointing to Laravel's `public`
+  directory. `localhost` and `127.0.0.1` also work for development, but plain HTTP
+  on a LAN IP (for example `http://192.168.x.x`) is not installable.
+- Allow `/manifest.webmanifest`, `/sw.js`, and `/pwa/*` to be served publicly.
+  Keep `/sw.js` revalidatable (do not configure immutable long-term caching).
+- The school name comes from admin settings. The installed app opens
+  `/consultations`, which routes signed-in users to the appropriate workspace;
+  guests see the portal login. Admin login remains available at `/admin/login`.
+- Installed/standalone launches show a theme-aware loading screen that clears
+  when the page is ready, with an eight-second safety timeout.
+- An internet connection is required for accounts and bookings. The service
+  worker caches **only** `/pwa/offline.html`, never private pages, submissions,
+  photos, or consultation details. Offline visits show a reconnect screen.
+- Native installation and its system splash depend on the browser and OS.
+  In-app browsers may require opening the site in Chrome, Edge, or Safari first.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

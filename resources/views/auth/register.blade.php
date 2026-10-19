@@ -6,8 +6,11 @@
     <title>Create account · {{ $siteSettings->name ?: 'ConSync' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{{ asset('css/form-controls.css') }}">
+    @include('partials.theme-head')
 </head>
 <body class="grid min-h-screen place-items-center bg-slate-950 px-5 py-10 text-slate-100">
+    @include('partials.pwa-ui')
+    @include('partials.theme-auth-navigation')
     <main class="w-full max-w-xl rounded-2xl border border-slate-800 bg-slate-900 p-7 shadow-2xl sm:p-9">
         <a href="{{ route('register') }}" class="text-sm text-slate-400 hover:text-white">← Change account type</a>
         <p class="mt-6 text-sm font-semibold uppercase tracking-[.2em] text-rose-400">{{ ucfirst($selectedRole) }} registration</p>

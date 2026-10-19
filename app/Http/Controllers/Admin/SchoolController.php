@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -20,8 +21,23 @@ class SchoolController extends Controller
     public function index(): View
     {
         return view('admin.school', [
-            'gradeLevels' => GradeLevel::with('sections')->orderBy('name')->get(),
+            'gradeLevels' => GradeLevel::whereIn('name', GradeLevel::STANDARD_NAMES)->with('sections')->orderByRaw('LENGTH(name)')->orderBy('name')->get(),
         ]);
+    }
+
+    public function registrationGrades(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'grades' => ['sometimes', 'array'],
+            'grades.*' => ['required', 'integer', 'distinct', Rule::exists('grade_levels', 'id')->whereIn('name', GradeLevel::STANDARD_NAMES)],
+        ]);
+        DB::transaction(function () use ($data) {
+            // Lock the full set so simultaneous edits cannot partially interleave.
+            $grades = GradeLevel::whereIn('name', GradeLevel::STANDARD_NAMES)->lockForUpdate()->get();
+            $enabled = collect($data['grades'] ?? [])->map(fn ($id) => (int) $id);
+            foreach ($grades as $grade) $grade->update(['registration_enabled' => $enabled->contains($grade->id)]);
+        });
+        return back()->with('status', 'Registration grades updated. Only checked grades appear during student registration.');
     }
 
     public function store(Request $request, string $type): RedirectResponse
@@ -33,7 +49,7 @@ class SchoolController extends Controller
         ]);
         $model::create($data);
 
-        return back()->with('status', 'School list updated. The new option is available during registration.');
+        return back()->with('status', 'Section added. It appears in registration when its grade is enabled.');
     }
 
     public function update(Request $request, string $type, int $id): RedirectResponse
@@ -52,7 +68,6 @@ class SchoolController extends Controller
         $model = $this->catalogModel($type);
         $item = $model::findOrFail($id);
         $used = match ($type) {
-            'grade-levels' => $item->sections()->exists() || \App\Models\Student::where('grade_level_id', $id)->exists(),
             'sections' => \App\Models\Student::where('section_id', $id)->exists(),
         };
         if ($used) throw ValidationException::withMessages(['catalog' => 'This option is in use. Reassign its students/teachers or sections before deleting it.']);
@@ -98,14 +113,28 @@ class SchoolController extends Controller
             });
         }
 
-        return back()->with('status', 'School profile updated.');
+        return back()->with('status', $user->isTeacher()
+            ? ($data['consultation_approved'] ? 'Teacher scheduling approved. They can publish availability after completing their profile.' : 'Teacher scheduling revoked. New schedules, booking requests, and confirmations are blocked.')
+            : 'School profile updated.');
     }
 
-    public function monitoring(): View
+    public function monitoring(Request $request): View
     {
+        $data = $request->validate(['month' => ['nullable', 'date_format:Y-m'], 'day' => ['nullable', 'date_format:Y-m-d']]);
+        $month = !empty($data['month']) ? Carbon::createFromFormat('!Y-m', $data['month'])
+            : (!empty($data['day']) ? Carbon::parse($data['day'])->startOfMonth() : now()->startOfMonth());
+        $selectedDay = !empty($data['day']) ? Carbon::parse($data['day']) : ($month->isSameMonth(today()) ? today() : $month->copy());
+        if (!$selectedDay->isSameMonth($month)) throw ValidationException::withMessages(['day' => 'Select a date in the displayed month.']);
+        $monthEnd = $month->copy()->addMonth();
+        $bookingDates = ConsultationAppointment::where('starts_at', '>=', $month)->where('starts_at', '<', $monthEnd)
+            ->selectRaw('DATE(starts_at) as booking_date, status, COUNT(*) as total')->groupByRaw('DATE(starts_at), status')
+            ->get()->groupBy('booking_date');
+        $availabilityDates = ConsultationAvailability::whereNull('cancelled_at')->where('date', '>=', $month->toDateString())->where('date', '<', $monthEnd->toDateString())
+            ->selectRaw('date, COUNT(*) as total')->groupBy('date')->pluck('total', 'date');
         return view('admin.consultations', [
-            'appointments' => ConsultationAppointment::with(['teacher', 'student', 'availability'])->orderByDesc('starts_at')->paginate(25),
-            'availability' => ConsultationAvailability::with('teacher')->withCount(['appointments as queued_count' => fn ($query) => $query->whereIn('status', ['pending', 'confirmed'])])->orderByDesc('date')->orderBy('starts_at')->paginate(15, ['*'], 'availability_page'),
+            'month' => $month, 'selectedDay' => $selectedDay, 'bookingDates' => $bookingDates, 'availabilityDates' => $availabilityDates,
+            'appointments' => ConsultationAppointment::with(['teacher', 'student', 'availability'])->where('starts_at', '>=', $selectedDay)->where('starts_at', '<', $selectedDay->copy()->addDay())->orderBy('starts_at')->orderBy('id')->paginate(25),
+            'availability' => ConsultationAvailability::with('teacher')->whereDate('date', $selectedDay)->withCount(['appointments as queued_count' => fn ($query) => $query->whereIn('status', ['pending', 'confirmed'])])->orderBy('starts_at')->paginate(15, ['*'], 'availability_page'),
             'teachers' => User::with(['teacher', 'role'])->whereHas('role', fn ($query) => $query->whereRaw('LOWER(name) LIKE ?', ['%teacher%'])->orWhereRaw('LOWER(name) LIKE ?', ['%faculty%']))->orderBy('name')->get(),
         ]);
     }
@@ -113,7 +142,6 @@ class SchoolController extends Controller
     private function catalogModel(string $type): string
     {
         return match ($type) {
-            'grade-levels' => GradeLevel::class,
             'sections' => Section::class,
             default => abort(404),
         };

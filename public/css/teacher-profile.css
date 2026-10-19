@@ -139,6 +139,15 @@
 .profile-crop-dialog :where(button, canvas, input):focus-visible { outline: 2px solid #fb7185; outline-offset: 2px; }
 .teacher-profile-page :where(input, textarea, select, label, section) { scroll-margin-top: 96px; scroll-margin-bottom: 220px; }
 .teacher-profile-page :where(summary, .profile-section-navigation a):focus-visible { outline: 2px solid #fb7185; outline-offset: 2px; }
+@media (max-width: 767px) {
+    .teacher-profile-page .profile-save-bar { flex-direction: row; align-items: center; justify-content: flex-end; gap: 8px; padding: 8px; }
+    .teacher-profile-page .profile-save-bar .profile-save-state { display: flex; flex: 1; min-width: 0; align-items: center; gap: 6px; }
+    .teacher-profile-page .profile-save-state strong { display: block; font-size: 10px; line-height: 1.4; }
+    .teacher-profile-page .profile-save-bar button { min-height: 44px; gap: 8px; padding: 10px 14px; font-size: 12px; }
+    /* Keep the save action in the document, not over the keyboard's reduced viewport. */
+    .teacher-profile-page form:has(input:focus, textarea:focus, select:focus) .profile-save-bar { position: static; }
+}
+
 @media (min-width: 1024px) { .profile-save-bar { bottom: 16px; } }
 @media (max-width: 1023px) { .profile-section-navigation { top: calc(80px + env(safe-area-inset-top, 0px)); } }
 @container (min-width: 560px) {

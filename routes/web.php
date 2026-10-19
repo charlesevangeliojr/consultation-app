@@ -14,6 +14,9 @@ use App\Http\Controllers\TeacherProfileController;
 use App\Http\Controllers\StudentDashboardController;
 use App\Models\ConsultationAvailability;
 use App\Models\User;
+use App\Http\Controllers\PwaController;
+
+Route::get('/manifest.webmanifest', [PwaController::class, 'manifest'])->name('pwa.manifest');
 
 Route::get('/', function () {
     $publicAvailability = ConsultationAvailability::query()
@@ -71,6 +74,7 @@ Route::middleware(['auth', \App\Http\Middleware\RefreshProposedConsultationReque
 
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/school', [SchoolController::class, 'index'])->middleware('permission:settings,view')->name('school');
+    Route::put('/school/registration-grades', [SchoolController::class, 'registrationGrades'])->middleware('permission:settings,edit')->name('school.registration-grades');
     Route::post('/school/{type}', [SchoolController::class, 'store'])->middleware('permission:settings,edit')->name('school.store');
     Route::put('/school/{type}/{id}', [SchoolController::class, 'update'])->middleware('permission:settings,edit')->name('school.update');
     Route::delete('/school/{type}/{id}', [SchoolController::class, 'destroy'])->middleware('permission:settings,edit')->name('school.destroy');
@@ -78,7 +82,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/consultations', [SchoolController::class, 'monitoring'])->middleware(['permission:dashboard,view', \App\Http\Middleware\RefreshProposedConsultationRequests::class])->name('consultations');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::view('/', 'admin.dashboard')->middleware('permission:dashboard,view')->name('dashboard');
+    Route::get('/', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->middleware(['permission:dashboard,view', \App\Http\Middleware\RefreshProposedConsultationRequests::class])->name('dashboard');
     Route::get('/settings', [SiteSettingsController::class, 'edit'])->middleware('permission:settings,view')->name('settings');
     Route::put('/settings', [SiteSettingsController::class, 'update'])->middleware('permission:settings,edit')->name('settings.update');
     Route::get('/accounts', [AdminAccountsController::class, 'index'])->middleware('permission:accounts,view')->name('accounts');

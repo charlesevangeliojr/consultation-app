@@ -12,7 +12,10 @@
     <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.12/dist/turbo.es2017-umd.js" defer></script>
     <link rel="stylesheet" href="{{ asset('css/mobile-navigation.css') }}">
     <link rel="stylesheet" href="{{ asset('css/admin-navigation.css') }}">
-    <script src="{{ asset('js/admin-navigation.js') }}" defer data-turbo-eval="false"></script>
+    @if(request()->routeIs('admin.dashboard'))<link rel="stylesheet" href="{{ asset('css/admin-dashboard.css') }}">@endif
+    <link rel="stylesheet" href="{{ asset('css/admin-consultations.css') }}">
+    @if(request()->routeIs('admin.consultations'))<link rel="stylesheet" href="{{ asset('css/responsive-calendar.css') }}">@endif
+    <script src="{{ asset('js/admin-consultations.js') }}" defer data-turbo-eval="false"></script>
     <script src="{{ asset('js/mobile-navigation.js') }}" defer></script>
     <script src="{{ asset('js/mobile-account-menu.js') }}" defer data-turbo-eval="false"></script>
     @if (request()->routeIs('admin.accounts*', 'admin.roles.*'))
@@ -20,8 +23,10 @@
         <script src="{{ asset('js/user-management.js') }}" defer></script>
     @endif
     <link rel="stylesheet" href="{{ asset('css/form-controls.css') }}">
+    @include('partials.theme-head')
 </head>
 <body @class(['admin-workspace has-mobile-navigation min-h-screen bg-slate-950 text-white antialiased', 'user-management' => request()->routeIs('admin.accounts*', 'admin.roles.*')])>
+    @include('partials.pwa-ui')
     @php
         $adminGroups = [
             ['label' => 'Overview', 'permission' => 'dashboard', 'items' => [
@@ -32,8 +37,8 @@
                 ['label' => 'Accounts', 'icon' => 'users', 'route' => 'admin.accounts', 'pattern' => 'admin.accounts*'],
                 ['label' => 'Roles & permissions', 'icon' => 'shield', 'route' => 'admin.roles.index', 'pattern' => 'admin.roles.*'],
             ]],
-            ['label' => 'School setup', 'permission' => 'settings', 'items' => [
-                ['label' => 'Academic lists', 'icon' => 'school', 'route' => 'admin.school', 'pattern' => 'admin.school*'],
+            ['label' => 'Configuration', 'permission' => 'settings', 'items' => [
+                ['label' => 'Grades & sections', 'icon' => 'school', 'route' => 'admin.school', 'pattern' => 'admin.school*'],
                 ['label' => 'School settings', 'icon' => 'settings', 'route' => 'admin.settings', 'pattern' => 'admin.settings'],
             ]],
         ];
@@ -44,7 +49,7 @@
             foreach ($group['items'] as $item) {
                 if ($item['route'] === 'admin.roles.index') continue;
                 $mobileItems[] = ['label' => match ($item['route']) {
-                    'admin.school' => 'School', 'admin.settings' => 'Settings', default => $item['label'],
+                    'admin.school' => 'Grades & sections', 'admin.settings' => 'Settings', default => $item['label'],
                 }, 'icon' => $item['icon'], 'url' => route($item['route']),
                     'active' => request()->routeIs($item['pattern']) || ($item['route'] === 'admin.accounts' && request()->routeIs('admin.roles.*'))];
             }
@@ -59,11 +64,13 @@
         <div class="admin-content">
             <header class="mobile-topbar admin-topbar">
                 <div class="admin-topbar-heading">
-                    <button type="button" class="admin-menu-toggle" data-admin-menu-open aria-label="Open admin menu" aria-controls="admin-mobile-menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/></svg></button>
                     <div class="admin-page-title"><p>Administration</p><h1>@yield('title', 'Dashboard')</h1></div>
                 </div>
-                <span class="admin-access-label">{{ auth()->user()->isAdmin() ? 'Super Admin' : 'Administrator' }}</span>
-                @include('partials.mobile-account-menu', ['mobileLogoutUrl' => route('admin.logout'), 'mobileProfileUrl' => route('admin.profile.edit')])
+                <div class="theme-navbar-actions">
+                    <span class="admin-access-label">{{ auth()->user()->isAdmin() ? 'Super Admin' : 'Administrator' }}</span>
+                    @include('partials.theme-toggle')
+                    @include('partials.mobile-account-menu', ['mobileLogoutUrl' => route('admin.logout'), 'mobileProfileUrl' => route('admin.profile.edit')])
+                </div>
             </header>
             @if(auth()->user()->canAccess('accounts', 'view') && request()->routeIs('admin.accounts*', 'admin.roles.*'))
                 <nav aria-label="People and access navigation" class="admin-section-tabs">
@@ -74,17 +81,6 @@
             <main class="admin-main" id="admin-workspace">@yield('content')</main>
         </div>
     </div>
-    <dialog id="admin-mobile-menu" class="admin-mobile-menu" aria-labelledby="admin-mobile-menu-title" data-admin-menu>
-        <div class="admin-drawer-layout">
-            <div class="admin-drawer-header"><h2 id="admin-mobile-menu-title">Admin menu</h2><button type="button" class="admin-menu-close" data-admin-menu-close aria-label="Close admin menu" autofocus><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="m6 6 12 12M18 6 6 18"/></svg></button></div>
-            @include('admin.partials.navigation-brand')
-            @include('admin.partials.navigation', ['navigationLabel' => 'Admin menu navigation'])
-            <div class="admin-drawer-footer">
-                <a href="{{ route('admin.profile.edit') }}" class="admin-navigation-link" @if(request()->routeIs('admin.profile.*')) aria-current="page" @endif>@include('partials.navigation-icon', ['icon' => 'profile'])<span>My profile</span></a>
-                <form method="POST" action="{{ route('admin.logout') }}">@csrf<button class="admin-navigation-link admin-sign-out">@include('partials.navigation-icon', ['icon' => 'logout'])<span>Sign out</span></button></form>
-            </div>
-        </div>
-    </dialog>
     @include('partials.mobile-navigation', ['mobileLabel' => 'Admin mobile navigation'])
 </body>
 </html>

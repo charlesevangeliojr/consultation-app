@@ -16,14 +16,28 @@ class AdminAccountsController extends Controller
 {
     public function index(): View
     {
+        $filters = request()->validate(['search' => ['nullable', 'string', 'max:150']]);
+        $search = trim($filters['search'] ?? '');
+        $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($search)).'%';
         AccountActivity::deactivateDormantStudents();
         $users = User::query()
-            ->with(['role', 'student'])
+            ->with(['role', 'teacher', 'student.section', 'student.gradeLevel'])
             ->when(! request()->user()->isAdmin(), fn ($query) => $query->whereDoesntHave('role', fn ($roles) => $roles->where('is_super_admin', true)))
+            ->when($search !== '', function ($query) use ($pattern) {
+                $query->where(function ($matches) use ($pattern) {
+                    $matches->whereRaw("LOWER(users.name) LIKE ? ESCAPE '!'", [$pattern])
+                        ->orWhereRaw("LOWER(users.email) LIKE ? ESCAPE '!'", [$pattern])
+                        ->orWhereHas('student', function ($student) use ($pattern) {
+                            $student->whereRaw("LOWER(lrn) LIKE ? ESCAPE '!'", [$pattern])
+                                ->orWhereHas('section', fn ($section) => $section->whereRaw("LOWER(name) LIKE ? ESCAPE '!'", [$pattern]));
+                        });
+                });
+            })
             ->orderBy('name')
-            ->paginate(15);
+            ->orderBy('id')
+            ->paginate(15)->withQueryString();
 
-        return view('admin.accounts', compact('users'));
+        return view('admin.accounts', compact('users', 'search'));
     }
 
     public function create(): View

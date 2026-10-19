@@ -11,6 +11,11 @@ use Tests\TestCase;
 
 class RegistrationTest extends TestCase
 {
+    public function test_account_type_selection_has_a_back_to_home_link(): void
+    {
+        $this->get(route('register'))->assertOk()->assertSee('Back to home')
+            ->assertSee('href="'.url('/').'"', false);
+    }
     use RefreshDatabase;
 
     public function test_registration_choice_and_role_forms_are_available(): void
@@ -22,7 +27,7 @@ class RegistrationTest extends TestCase
 
     public function test_student_can_register_and_is_given_a_student_profile(): void
     {
-        $grade = GradeLevel::create(['name' => 'Grade 11']);
+        $grade = GradeLevel::where('name', 'Grade 11')->firstOrFail();
         $section = Section::create(['name' => 'Einstein', 'grade_level_id' => $grade->id]);
         $response = $this->post(route('register.store'), [
             'grade_level_id' => $grade->id,
@@ -136,8 +141,8 @@ class RegistrationTest extends TestCase
 
     public function test_registration_requires_school_information_and_matching_section(): void
     {
-        $grade = GradeLevel::create(['name' => 'Grade 10']);
-        $otherGrade = GradeLevel::create(['name' => 'Grade 12']);
+        $grade = GradeLevel::where('name', 'Grade 10')->firstOrFail();
+        $otherGrade = GradeLevel::where('name', 'Grade 12')->firstOrFail();
         $section = Section::create(['name' => 'Newton', 'grade_level_id' => $otherGrade->id]);
         $this->post(route('register.store'), [
             'role' => 'student',
@@ -151,9 +156,9 @@ class RegistrationTest extends TestCase
 
     public function test_admin_created_options_appear_on_registration_forms(): void
     {
-        $grade = GradeLevel::create(['name' => 'Grade Eleven']);
+        $grade = GradeLevel::where('name', 'Grade 11')->firstOrFail();
         Section::create(['name' => 'Section Einstein', 'grade_level_id' => $grade->id]);
-        $this->get(route('register', ['role' => 'student']))->assertSee('Grade Eleven')->assertSee('Section Einstein');
+        $this->get(route('register', ['role' => 'student']))->assertSee('Grade 11')->assertSee('Section Einstein');
         $this->get(route('register', ['role' => 'teacher']))->assertDontSee('Subjects you handle');
     }
 }

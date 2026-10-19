@@ -12,7 +12,7 @@ async function run() {
     });
     try {
         for (const role of ['teacher', 'student', 'admin']) {
-            const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+            const context = await browser.newContext({ colorScheme: 'dark', viewport: { width: 390, height: 844 } });
             const page = await context.newPage();
             if (role === 'teacher' || role === 'student') {
                 await page.route('https://psgc.gitlab.io/api/**', route => {
@@ -637,7 +637,7 @@ async function run() {
                 }
                 console.log('PASS student redesign: full-width desktop shell, responsive profile, account menu, live save state, crop cancellation and saved avatar');
             } else {
-                await navigation.getByText(role === 'admin' ? 'School' : 'My profile', { exact: true }).click();
+                await navigation.getByText(role === 'admin' ? 'Grades & sections' : 'My profile', { exact: true }).click();
                 await page.waitForURL(role === 'admin' ? '**/admin/school' : '**/consultations/student/profile');
                 await page.waitForFunction(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
                 assert.ok(await page.locator('[data-mobile-navigation] a[aria-current="page"]').count(), `${role}: active destination missing`);

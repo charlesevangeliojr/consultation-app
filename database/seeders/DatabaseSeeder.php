@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call(GradeLevelSeeder::class);
         Role::firstOrCreate(['name' => 'Teacher'], ['is_super_admin' => false]);
         Role::firstOrCreate(['name' => 'Student'], ['is_super_admin' => false]);
 

@@ -3,7 +3,6 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#020617">
     <meta name="description" content="ConSync connects students, teachers, and administrators through one organized academic consultation platform.">
     <title>{{ $siteSettings->name ?: 'ConSync' }} — Academic consultations, organized</title>
     @if ($siteSettings->favicon_path)
@@ -22,8 +21,10 @@
         .focus-rose:focus-visible { outline: 2px solid #fb7185; outline-offset: 4px; }
         @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
     </style>
+    @include('partials.theme-head')
 </head>
 <body class="antialiased selection:bg-rose-500/30 selection:text-white">
+    @include('partials.pwa-ui')
     @php
         $landingWeekStart = now()->startOfWeek();
         $landingAvailabilityDates = $publicAvailability->pluck('date')->map(fn ($date) => $date->toDateString())->unique()->all();
@@ -31,8 +32,8 @@
     <a href="#main" class="focus-rose sr-only z-50 rounded-lg bg-slate-900 px-4 py-3 text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4">Skip to content</a>
 
     <header class="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-xl">
-        <nav aria-label="Main navigation" class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
-            <a href="#home" class="focus-rose flex items-center gap-3 rounded-lg" aria-label="{{ $siteSettings->name ?: 'ConSync' }} home">
+        <nav aria-label="Main navigation" class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-4 sm:px-8">
+            <a href="#home" class="focus-rose flex min-w-0 items-center gap-3 rounded-lg" aria-label="{{ $siteSettings->name ?: 'ConSync' }} home">
                 @if ($siteSettings->logo_path)
                     <img src="{{ asset('storage/'.$siteSettings->logo_path) }}" alt="" class="h-10 w-10 rounded-lg object-contain">
                 @else
@@ -40,10 +41,10 @@
                         <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path stroke-linecap="round" d="M7.5 3.5v3M16.5 3.5v3M3.5 9.5h17M8 13h2m4 0h2m-8 3h2m4 0h2"/><path stroke-linecap="round" stroke-linejoin="round" d="m15 13 1.4 1.4L19 12"/></svg>
                     </span>
                 @endif
-                <span class="text-lg font-bold tracking-tight">{{ $siteSettings->name ?: 'ConSync' }}<span class="text-rose-400">.</span></span>
+                <span class="truncate text-lg font-bold tracking-tight">{{ $siteSettings->name ?: 'ConSync' }}<span class="text-rose-400">.</span></span>
             </a>
 
-            <div class="hidden items-center gap-7 lg:flex">
+            <div class="hidden items-center gap-4 lg:flex xl:gap-7">
                 <a class="focus-rose text-sm text-slate-300 transition hover:text-white" href="#home">Home</a>
                 <a class="focus-rose text-sm text-slate-300 transition hover:text-white" href="#features">Features</a>
                 <a class="focus-rose text-sm text-slate-300 transition hover:text-white" href="#how-it-works">How it works</a>
@@ -53,10 +54,13 @@
                 <a href="{{ route('portal.login') }}" class="focus-rose rounded-lg border border-slate-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">Log in</a>
             </div>
 
+            <div class="theme-navbar-actions">
+            @include('partials.theme-toggle')
             <button type="button" id="mobile-menu-button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open navigation menu" class="focus-rose grid h-10 w-10 place-items-center rounded-lg border border-slate-700 text-slate-200 hover:bg-slate-800 lg:hidden">
                 <svg id="menu-open-icon" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
                 <svg id="menu-close-icon" class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="m6 6 12 12M18 6 6 18"/></svg>
             </button>
+            </div>
         </nav>
         <div id="mobile-menu" class="hidden border-t border-slate-800 bg-slate-950 px-5 py-4 lg:hidden">
             <div class="mx-auto grid max-w-7xl gap-1">

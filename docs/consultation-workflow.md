@@ -26,7 +26,7 @@ can be assigned a grade and section through Accounts.
    and confirming requests. This is a teacher-level permission, not per-schedule
    approval. Revocation blocks new publication, booking, and confirmation, but
    preserves existing bookings; teachers can still reject/cancel them.
-4. Under **School setup → School settings**, choose queue visibility: teacher choice, hide all, or show all.
+4. Under **Configuration → School settings**, choose queue visibility: teacher choice, hide all, or show all.
    School-wide rules override teacher preferences. Teachers and authorized admins
    can always see student names; other students see names only when permitted.
    Consultation reasons are never shown to other students.
@@ -36,11 +36,11 @@ School lists use the existing `settings` view/edit permissions. Editing school
 profiles uses `accounts` edit permission and account hierarchy checks. Monitoring
 uses `dashboard` view permission.
 
-Desktop navigation groups pages under Overview, People & access, and School setup.
-On mobile, **Open admin menu** opens the same permission-filtered groups in a
-scrollable drawer. Escape, the close button, or a backdrop click dismisses it;
-selecting a link closes the drawer before navigation. Bottom shortcuts remain
-available, and Accounts/roles screens also provide section tabs.
+Desktop navigation groups pages under Overview, People & access, and Configuration.
+On mobile, the sidebar and menu button are removed: use the permission-filtered
+bottom navigation instead. Accounts/roles screens provide section tabs for
+Roles & permissions. My profile and Sign out remain in the avatar menu, and the
+theme switch remains directly in the top bar.
 
 The optional admin-only browser check covers 320–1440px viewports, all main admin
 pages, touch targets, keyboard dismissal/focus return, Turbo navigation, desktop
@@ -210,8 +210,19 @@ php artisan consultations:reject-stale-requests
   cancellation explanation. Updates appear on page refresh; no email/SMS
   notification service is configured.
 
-All times use `config('app.timezone')` (currently configured in `config/app.php`).
-Set the application's timezone appropriately before using schedules at school.
+All times use `config('app.timezone')`, fixed to **Asia/Manila (Philippine Standard
+Time, UTC+8)** in `config/app.php`. Booking inputs, availability, calendar date
+boundaries, dashboard reporting, account activity and scheduled request expiry
+use this timezone, regardless of the visitor's device timezone.
+
+Schedules are stored as school-local date/time values. This timezone change does
+not bulk-shift existing appointment, availability, or historical activity values.
+If old records represent actual UTC instants rather than intended Philippine
+wall-clock times, review and convert those records explicitly from a backup before
+relying on them; do not add eight hours indiscriminately to agreed school times.
+Clear cached configuration after deploying (`php artisan config:clear`), and
+restart long-running queue workers or scheduler processes so they pick up the
+new timezone.
 
 ## Optional local demo data
 

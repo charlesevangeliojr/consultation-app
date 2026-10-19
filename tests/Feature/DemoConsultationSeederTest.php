@@ -21,7 +21,7 @@ class DemoConsultationSeederTest extends TestCase
     {
         $this->seed(DemoConsultationSeeder::class);
         $this->assertDatabaseCount('users', 8);
-        $this->assertSame(3, GradeLevel::count());
+        $this->assertSame(6, GradeLevel::count());
         $this->assertSame(6, Section::count());
         $this->assertSame(5, Subject::count());
         $this->assertSame(7, ConsultationAvailability::count());

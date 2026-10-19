@@ -17,13 +17,13 @@ class AdminNavigationTest extends TestCase
         $this->actingAs(User::factory()->superAdmin()->create());
         foreach (['admin.dashboard', 'admin.consultations', 'admin.accounts', 'admin.roles.index', 'admin.school', 'admin.settings'] as $route) {
             $response = $this->get(route($route))->assertOk()
-                ->assertSee('admin-navigation.css')->assertSee('admin-navigation.js')
-                ->assertSee('aria-controls="admin-mobile-menu"', false);
+                ->assertSee('admin-navigation.css')->assertDontSee('admin-navigation.js')
+                ->assertDontSee('data-admin-menu-open', false)->assertDontSee('id="admin-mobile-menu"', false);
             $xpath = $this->xpath($response->getContent());
-            foreach (['Admin navigation', 'Admin menu navigation'] as $label) {
+            foreach (['Admin navigation'] as $label) {
                 $navigation = '//nav[@aria-label="'.$label.'"]';
                 $headings = $xpath->query($navigation.'//p');
-                $this->assertSame(['Overview', 'People & access', 'School setup'], array_map(fn ($node) => trim($node->textContent), iterator_to_array($headings)));
+                $this->assertSame(['Overview', 'People & access', 'Configuration'], array_map(fn ($node) => trim($node->textContent), iterator_to_array($headings)));
                 $active = $xpath->query($navigation.'//a[@aria-current="page"]');
                 $this->assertCount(1, $active);
                 $this->assertSame(route($route), $active->item(0)->getAttribute('href'));
@@ -39,7 +39,7 @@ class AdminNavigationTest extends TestCase
         $user->syncPermissions(['accounts' => ['view' => true]]);
         $html = $this->actingAs($user)->get(route('admin.roles.index'))->assertOk()->getContent();
         $xpath = $this->xpath($html);
-        foreach (['Admin navigation', 'Admin menu navigation'] as $label) {
+        foreach (['Admin navigation'] as $label) {
             $links = $xpath->query('//nav[@aria-label="'.$label.'"]//a');
             $this->assertSame([route('admin.accounts'), route('admin.roles.index')], array_map(fn ($node) => $node->getAttribute('href'), iterator_to_array($links)));
         }

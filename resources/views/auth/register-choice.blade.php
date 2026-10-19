@@ -5,8 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Register · {{ $siteSettings->name ?: 'ConSync' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    @include('partials.theme-head')
 </head>
 <body class="grid min-h-screen place-items-center bg-slate-950 px-5 py-10 text-slate-100">
+    @include('partials.pwa-ui')
+    @include('partials.theme-auth-navigation')
     <main class="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-7 text-center shadow-2xl sm:p-9">
         <a href="{{ url('/') }}" class="mx-auto inline-flex items-center gap-3 rounded-lg text-xl font-bold tracking-tight text-white">
             @if ($siteSettings->logo_path)
@@ -21,6 +24,7 @@
             <a href="{{ route('register', ['role' => 'student']) }}" class="rounded-lg bg-rose-500 px-5 py-3 font-semibold text-white transition hover:bg-rose-400">Student</a>
             <a href="{{ route('register', ['role' => 'teacher']) }}" class="rounded-lg border border-slate-700 bg-slate-950 px-5 py-3 font-semibold text-white transition hover:border-rose-400 hover:bg-slate-800">Teacher</a>
         </div>
+        <a href="{{ url('/') }}" class="mt-6 inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-slate-400 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-rose-400"><span aria-hidden="true">←</span> Back to home</a>
     </main>
 </body>
 </html>

@@ -65,7 +65,7 @@ class MobileNavigationTest extends TestCase
     {
         $admin = User::factory()->superAdmin()->create();
         $navigation = $this->navigation($this->actingAs($admin)->get(route('admin.school'))->assertOk()->getContent());
-        foreach (['Dashboard', 'Accounts', 'School', 'Monitor', 'Settings', 'Admin mobile navigation'] as $text) {
+        foreach (['Dashboard', 'Accounts', 'Grades &amp; sections', 'Consultations', 'Settings', 'Admin mobile navigation'] as $text) {
             $this->assertStringContainsString($text, $navigation);
         }
         $this->assertStringContainsString('aria-current="page"', $navigation);
@@ -76,7 +76,7 @@ class MobileNavigationTest extends TestCase
         $admin = User::factory()->create();
         $admin->syncPermissions(['settings' => ['view' => true]]);
         $navigation = $this->navigation($this->actingAs($admin)->get(route('admin.settings'))->assertOk()->getContent());
-        foreach (['School', 'Settings'] as $text) $this->assertStringContainsString($text, $navigation);
+        foreach (['Grades &amp; sections', 'Settings'] as $text) $this->assertStringContainsString($text, $navigation);
         foreach (['Dashboard', 'Accounts', 'Monitor'] as $text) $this->assertStringNotContainsString($text, $navigation);
     }
 }

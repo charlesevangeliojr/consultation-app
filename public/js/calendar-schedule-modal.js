@@ -40,7 +40,8 @@
             restore();
             trigger = link;
             const date = link.dataset.calendarDate;
-            title.textContent = new Intl.DateTimeFormat(document.documentElement.lang || 'en', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(`${date}T12:00:00`));
+            // Calendar dates belong to the school, not the visitor's device zone.
+            title.textContent = new Intl.DateTimeFormat(document.documentElement.lang || 'en', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'Asia/Manila' }).format(new Date(`${date}T12:00:00+08:00`));
             document.documentElement.classList.add('calendar-schedule-open');
             dialog.showModal();
             if (calendar.id === 'student-teacher-calendar') {

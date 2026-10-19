@@ -275,8 +275,8 @@ automatically rejected with a time-taken explanation.
 could request 1:10–1:40 PM or 2:00–3:00 PM if free. A request from 2:00–3:15 PM would
 exceed the maximum. Requests do not have to align to fixed half-hour slots.
 
-All schedules use the application's configured timezone, shown in the scheduling
-screens. They are not automatically converted to each visitor's device timezone.
+All schedules use **Philippine Standard Time (Asia/Manila, UTC+8)**, shown in the
+scheduling screens. They are not converted to each visitor's device timezone.
 
 ### Booking status meanings
 
@@ -301,15 +301,15 @@ level. The sidebar groups permitted pages into:
 
 - **Overview:** Dashboard and Consultations (read-only consultation monitoring).
 - **People & access:** Accounts and Roles & permissions.
-- **School setup:** Academic lists and School settings.
+- **Configuration:** Grades & sections and School settings.
 
-On phones and tablets, the header menu opens the same grouped navigation in a
-scrollable drawer. The bottom navigation provides shortcuts to the main areas;
-Roles & permissions remains available from the menu and the Accounts/roles tabs.
-My profile is available from the account menu and the mobile drawer. The current
-page is highlighted, and groups are hidden when the account lacks view permission.
+On phones and tablets, there is no sidebar drawer or hamburger menu. Use the
+bottom navigation for the main areas and the Accounts/roles tabs for
+Roles & permissions. My profile and Sign out are in the avatar menu; the theme
+button is in the top bar. The current page is highlighted, and navigation items
+are hidden when the account lacks view permission.
 
-### Academic lists
+### Grades & sections
 
 Administrators maintain grade levels and sections under each grade.
 These lists supply registration choices and school-profile assignments. A section
