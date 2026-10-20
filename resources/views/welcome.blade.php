@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="A consultation system for one school. Learn how students register and book, teachers manage requests, and administrators maintain the school’s accounts and settings.">
     <title>{{ $siteSettings->name ?: 'ConSync' }} — Your guide to school consultations</title>
-    <link rel="icon" href="{{ $siteSettings->favicon_path ? asset('storage/'.$siteSettings->favicon_path) : asset('favicon.ico') }}">
+    <link rel="icon" href="{{ $siteSettings->favicon_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($siteSettings->favicon_path) : asset('favicon.ico') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.12/dist/turbo.es2017-umd.js" defer></script>
     <script src="{{ asset('js/landing.js') }}" defer data-turbo-eval="false"></script>
@@ -33,7 +33,7 @@
         <nav aria-label="Main navigation" class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-8">
             <a href="#home" class="focus-rose flex min-w-0 items-center gap-3 rounded-lg lg:flex-1" aria-label="{{ $appName }} home">
                 @if($siteSettings->logo_path)
-                    <img src="{{ asset('storage/'.$siteSettings->logo_path) }}" alt="" class="h-10 w-10 shrink-0 rounded-lg object-contain">
+                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($siteSettings->logo_path) }}" alt="" class="h-10 w-10 shrink-0 rounded-lg object-contain">
                 @else
                     <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-rose-500 text-lg font-bold text-white" aria-hidden="true">{{ mb_substr($appName, 0, 1) }}</span>
                 @endif

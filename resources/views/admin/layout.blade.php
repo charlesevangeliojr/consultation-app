@@ -7,7 +7,7 @@
     <meta name="account-activity-url" content="{{ route('account.activity') }}">
     <script src="{{ asset('js/account-activity.js') }}" defer data-turbo-eval="false"></script>
     <title>@yield('title', 'Admin') · {{ $siteSettings->name }}</title>
-    <link rel="icon" href="{{ $siteSettings->favicon_path ? asset('storage/'.$siteSettings->favicon_path) : asset('favicon.ico') }}">
+    <link rel="icon" href="{{ $siteSettings->favicon_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($siteSettings->favicon_path) : asset('favicon.ico') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.12/dist/turbo.es2017-umd.js" defer></script>
     <link rel="stylesheet" href="{{ asset('css/mobile-navigation.css') }}">

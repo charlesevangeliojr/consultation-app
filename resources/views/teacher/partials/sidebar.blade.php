@@ -1,6 +1,6 @@
 <aside class="teacher-sidebar" aria-label="Teacher sidebar">
     <a href="{{ route('consultations.home') }}" class="flex min-w-0 items-center gap-3 border-b border-slate-800 px-5 py-5 text-lg font-bold">
-        @if($siteSettings->logo_path)<img src="{{ asset('storage/'.$siteSettings->logo_path) }}" alt="" class="h-10 w-10 shrink-0 rounded-lg object-contain">
+        @if($siteSettings->logo_path)<img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($siteSettings->logo_path) }}" alt="" class="h-10 w-10 shrink-0 rounded-lg object-contain">
         @else<span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-rose-500 text-white">{{ mb_substr($siteSettings->name ?: 'C', 0, 1) }}</span>@endif
         <span class="min-w-0 break-words [overflow-wrap:anywhere]">{{ $siteSettings->name ?: 'ConSync' }}<span class="text-rose-400">.</span></span>
     </a>

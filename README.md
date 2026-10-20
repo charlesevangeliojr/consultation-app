@@ -18,6 +18,10 @@ See [the consultation workflow guide](docs/consultation-workflow.md) for databas
 setup, admin school lists and approvals, teacher preferences, student booking,
 queue privacy, cancellation rules, and verification commands.
 
+For uploaded images missing on InfinityFree or other shared hosts, see
+[Shared-hosting image setup](docs/shared-hosting-images.md). It explains the
+symlink-free `/media` image route, hosted configuration, and transferring uploads.
+
 For sample accounts and a MySQL/MariaDB data snapshot, see
 [Demo credentials and SQL import](docs/demo-data.md).
 

@@ -43,6 +43,7 @@ return [
             'root' => storage_path('app/public'),
             // Local uploads must follow the page's host, port, and protocol.
             // APP_URL may omit a development port or differ behind a proxy.
+            // Use /media on shared hosts that block the public/storage symlink.
             'url' => env('PUBLIC_STORAGE_URL', '/storage'),
             'visibility' => 'public',
             'throw' => false,

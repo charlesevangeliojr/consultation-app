@@ -25,7 +25,7 @@
             <label for="logo" class="mb-2 block text-sm font-medium">Project logo</label>
             @if ($siteSettings->logo_path)
                 <div class="mb-4 flex items-center gap-4">
-                    <img src="{{ asset('storage/'.$siteSettings->logo_path) }}" alt="Current project logo" class="h-16 w-16 rounded-lg border border-slate-700 bg-white object-contain p-2">
+                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($siteSettings->logo_path) }}" alt="Current project logo" class="h-16 w-16 rounded-lg border border-slate-700 bg-white object-contain p-2">
                     <label class="flex items-center gap-2 text-sm text-slate-300">
                         <input type="checkbox" name="remove_logo" value="1" class="rounded border-slate-600 bg-slate-950 text-rose-500">
                         Remove current logo
@@ -42,7 +42,7 @@
             <label for="favicon" class="mb-2 block text-sm font-medium">Browser tab icon (favicon)</label>
             @if ($siteSettings->favicon_path)
                 <div class="mb-4 flex items-center gap-4">
-                    <img src="{{ asset('storage/'.$siteSettings->favicon_path) }}" alt="Current browser tab icon" class="h-10 w-10 rounded border border-slate-700 bg-white object-contain p-1">
+                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($siteSettings->favicon_path) }}" alt="Current browser tab icon" class="h-10 w-10 rounded border border-slate-700 bg-white object-contain p-1">
                     <label class="flex items-center gap-2 text-sm text-slate-300">
                         <input type="checkbox" name="remove_favicon" value="1" class="rounded border-slate-600 bg-slate-950 text-rose-500">
                         Remove current favicon

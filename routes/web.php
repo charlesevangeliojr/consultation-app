@@ -17,6 +17,9 @@ use App\Http\Controllers\PwaController;
 
 Route::get('/manifest.webmanifest', [PwaController::class, 'manifest'])->name('pwa.manifest');
 Route::get('/admin/manifest.webmanifest', [PwaController::class, 'adminManifest'])->name('pwa.admin-manifest');
+// Shared hosting can serve uploaded images through PHP without a storage symlink.
+Route::get('/storage/{directory}/{filename}', [\App\Http\Controllers\PublicImageController::class, 'show'])->name('images.storage');
+Route::get('/media/{directory}/{filename}', [\App\Http\Controllers\PublicImageController::class, 'show'])->name('images.media');
 
 Route::get('/', function () {
     $publicAvailability = ConsultationAvailability::query()
