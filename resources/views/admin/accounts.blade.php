@@ -3,18 +3,23 @@
 @section('content')
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div><p class="text-sm font-semibold uppercase tracking-[0.25em] text-rose-400">People &amp; access</p><h2 class="mt-3 text-3xl font-bold sm:text-4xl">Accounts</h2><p class="mt-3 text-slate-400">Manage user details, student account status, and recent activity.</p></div>
-        @if(auth()->user()->canAccess('accounts', 'add'))<a href="{{ route('admin.accounts.create') }}" class="rounded-lg bg-rose-500 px-5 py-3 font-semibold transition hover:bg-rose-400">Add user</a>@endif
     </div>
     @if(session('status'))<p role="status" class="mt-6 rounded-lg border border-emerald-900 bg-emerald-950/50 p-4 text-sm text-emerald-200">{{ session('status') }}</p>@endif
+    <nav class="account-group-tabs" aria-label="Account groups">
+        @foreach(['all' => 'All', 'admins' => 'Admins', 'teachers' => 'Teachers', 'students' => 'Students'] as $key => $label)
+            <a href="{{ route('admin.accounts', array_filter(['group' => $key, 'search' => $search])) }}" @if($key === 'teachers' && $pendingCount > 0) class="account-group-needs-approval" @endif @if($group === $key || ($key === 'teachers' && $group === 'pending')) aria-current="page" @endif>{{ $label }}@if($key === 'teachers' && $pendingCount > 0) <span class="account-pending-count" aria-label="{{ $pendingCount }} teachers need scheduling approval">{{ $pendingCount }}</span>@endif</a>
+        @endforeach
+    </nav>
     <p class="mt-6 text-sm text-slate-400">Online means activity within the last 5 minutes. Student accounts become inactive after 2 years without activity. Active / inactive is separate from online / offline. Refresh this page to update activity.</p>
     <form method="GET" action="{{ route('admin.accounts') }}" role="search" aria-label="Search accounts" class="mt-6 rounded-xl border border-slate-800 bg-slate-900 p-4">
+        <input type="hidden" name="group" value="{{ $group }}">
         <label for="account-search" class="block text-sm font-medium text-slate-200">Search users</label>
         <div class="mt-2 flex flex-wrap gap-3">
             <input id="account-search" name="search" type="search" maxlength="150" value="{{ $search }}" placeholder="Name, email, LRN, or section" aria-describedby="account-search-help" class="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white">
             <button type="submit" class="rounded-lg bg-rose-500 px-4 py-3 text-sm font-semibold hover:bg-rose-400">Search</button>
-            @if($search !== '')<a href="{{ route('admin.accounts') }}" class="rounded-lg border border-slate-700 px-4 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-800">Clear</a>@endif
+            @if($search !== '')<a href="{{ route('admin.accounts', ['group' => $group]) }}" class="rounded-lg border border-slate-700 px-4 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-800">Clear</a>@endif
         </div>
-        <p id="account-search-help" class="mt-2 text-xs text-slate-400">Search all users by name, email, student LRN, or section.</p>
+        <p id="account-search-help" class="mt-2 text-xs text-slate-400">Search the selected group by name, email, student LRN, or section.</p>
         @error('search')<p role="alert" class="mt-2 text-sm text-rose-300">{{ $message }}</p>@enderror
         <p role="status" class="mt-3 text-sm text-slate-400">{{ $users->total() }} {{ \Illuminate\Support\Str::plural('user', $users->total()) }}{{ $search !== '' ? ' matching your search' : ' in total' }}.</p>
     </form>
@@ -22,7 +27,8 @@
     <div class="booking-records-table mt-4" data-account-records>
         <table><caption class="sr-only">Accounts. Select a name or tap a row to view details.</caption><thead><tr><th scope="col">Name</th><th scope="col">Role</th></tr></thead><tbody>
             @forelse($users as $user)
-                <tr data-record-open="account-detail-{{ $user->id }}"><td><button type="button" aria-haspopup="dialog" aria-controls="account-detail-{{ $user->id }}" aria-label="View account for {{ $user->name }}"><strong>{{ $user->name }}</strong></button></td><td><span class="account-record-role">{{ $user->isAdmin() ? 'Super Admin' : ($user->role?->name ?? 'Custom permissions') }}</span></td></tr>
+                @php($needsApproval = $user->isTeacher() && !$user->teacher?->consultation_approved)
+                <tr data-record-open="account-detail-{{ $user->id }}" @if($needsApproval) class="account-needs-approval" @endif><td><button type="button" aria-haspopup="dialog" aria-controls="account-detail-{{ $user->id }}" aria-label="View account for {{ $user->name }}"><strong>{{ $user->name }}</strong>@if($needsApproval)<span class="account-approval-label">Needs scheduling approval</span>@endif</button></td><td><span class="account-record-role">{{ $user->isAdmin() ? 'Super Admin' : ($user->role?->name ?? 'Custom permissions') }}</span></td></tr>
             @empty<tr><td colspan="2" class="booking-records-empty">No users found.</td></tr>@endforelse
         </tbody></table>
     </div>

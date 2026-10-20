@@ -36,4 +36,19 @@ class PwaTest extends TestCase
         $this->actingAs(User::factory()->superAdmin()->create())->get(route('admin.accounts'))->assertOk()
             ->assertSee('data-pwa-install', false)->assertSee('data-pwa-launch', false);
     }
+
+    public function test_admin_install_has_separate_identity_scope_and_admin_name(): void
+    {
+        SiteSetting::current()->update(['name' => 'Fictional School']);
+        $this->get('/admin/manifest.webmanifest')->assertOk()->assertHeader('Content-Type', 'application/manifest+json')
+            ->assertJsonPath('id', '/admin/')->assertJsonPath('name', 'Fictional School Admin')
+            ->assertJsonPath('short_name', 'Fictional School Admin')->assertJsonPath('start_url', '/admin/')
+            ->assertJsonPath('scope', '/admin/');
+        $this->get('/admin/login')->assertOk()->assertSee('href="/admin/manifest.webmanifest"', false)
+            ->assertSee('Install Fictional School Admin')->assertSee('content="Fictional School Admin"', false);
+        $this->get('/portal/login')->assertOk()->assertSee('href="/manifest.webmanifest"', false)
+            ->assertDontSee('Install Fictional School Admin');
+        $this->actingAs(User::factory()->superAdmin()->create())->get(route('admin.accounts'))->assertOk()
+            ->assertSee('href="/admin/manifest.webmanifest"', false)->assertSee('Install Fictional School Admin');
+    }
 }

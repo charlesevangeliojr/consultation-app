@@ -50,6 +50,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'role_id' => 'integer',
             'last_seen_at' => 'datetime',
+            'portal_tour_seen_at' => 'datetime',
             'last_logged_out_at' => 'datetime',
             'inactivity_reference_at' => 'datetime',
         ];

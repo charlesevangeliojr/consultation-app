@@ -118,6 +118,15 @@ is saved in this browser and shared across pages and tabs; it does not change
 other users' devices. Theme switching also works when browser storage is blocked,
 but the choice cannot persist after reloading in that case.
 
+### Teacher and student navigation tours
+
+Teachers and students get a short role-specific walkthrough on their first visit.
+Use **Tour** in the top navbar to replay it, with Next, Back, Skip, and Open page
+actions. On mobile the replay button uses a question-mark icon. Finished/skipped
+tours are remembered on the account, including across browsers. No consultation
+data is stored in the browser. On the first authenticated visit, the tour takes
+priority over the install suggestion. Incomplete teachers see it on profile setup.
+
 ### Install on a phone or tablet (PWA)
 
 On a supported phone or tablet, the app shows a centered **Install app** popup

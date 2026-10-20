@@ -8,7 +8,7 @@
     <nav class="teacher-sidebar-navigation flex-1 space-y-2 px-3 py-4" aria-label="Student navigation">
         @foreach($items as $item)
             @continue($item['icon'] === 'profile')
-            <a href="{{ $item['url'] }}" @if($item['active'] ?? false) aria-current="page" @endif>@include('partials.navigation-icon', ['icon' => $item['icon']])<span>{{ $item['label'] }}</span></a>
+            <a href="{{ $item['url'] }}" @if($item['active'] ?? false) aria-current="page" @endif>@include('partials.navigation-icon', ['icon' => $item['icon']])<span>{{ $item['label'] }}</span>@include('partials.navigation-badge', ['mobileBadge' => false])</a>
         @endforeach
     </nav>
     <div class="shrink-0 border-t border-slate-800 p-3">

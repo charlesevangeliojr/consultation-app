@@ -39,6 +39,16 @@ html.booking-detail-open { overflow: hidden; }
 html[data-theme="light"] .account-record-actions button[data-open-delete] { color: #be123c; }
 .account-record-role { display: inline-block; padding: 5px 8px; border: 1px solid var(--theme-border); border-radius: 8px; color: var(--theme-muted); font-size: 11px; line-height: 1.6; }
 .account-record-footer { flex-wrap: wrap; }
+.account-group-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+.account-group-tabs a { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid var(--theme-border, #334155); border-radius: 10px; color: var(--theme-text, #e2e8f0); font-size: 12px; }
+.account-group-tabs a[aria-current] { background: #be123c; color: #fff; border-color: #be123c; }
+.account-group-tabs a.account-group-needs-approval:not([aria-current]) { border-color: #d97706; background: rgb(245 158 11 / 10%); }
+.account-pending-count { min-width: 20px; padding: 2px 6px; border-radius: 999px; background: #be123c; color: #fff; text-align: center; }
+.account-group-tabs a[aria-current] .account-pending-count { background: #fff; color: #9f1239; }
+.booking-records-table .account-needs-approval { background: rgb(245 158 11 / 8%); }
+.booking-records-table .account-needs-approval td:first-child { border-left: 3px solid #d97706; }
+.account-approval-label { display: block; margin-top: 5px; color: #fbbf24; font-size: 10px; font-weight: 600; }
+html[data-theme="light"] .account-approval-label { color: #92400e; }
 .teacher-approval-panel { margin-top: 24px; padding: 16px; border: 1px solid var(--theme-border); border-radius: 12px; background: var(--theme-inset); }
 .teacher-approval-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
 .teacher-approval-heading h3 { font-size: 13px; font-weight: 600; }

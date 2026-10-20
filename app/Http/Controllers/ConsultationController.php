@@ -299,7 +299,7 @@ class ConsultationController extends Controller
     {
         $this->requireRole('teacher');
         $data = $request->validate([
-            'max_consultation_minutes' => ['required', 'integer', 'in:30,60'],
+            'max_consultation_minutes' => ['required', 'integer', 'between:1,1440'],
             'auto_approve_bookings' => ['required', 'boolean'],
             'show_student_names' => ['required', 'boolean'],
         ]);

@@ -111,9 +111,24 @@ class StudentBookingTimeRangeTest extends TestCase
         $this->actingAs($teacher)->put(route('consultations.teacher.settings'), ['max_consultation_minutes' => 30, 'auto_approve_bookings' => 0, 'show_student_names' => 0])->assertSessionHasNoErrors();
         $this->book($student, $period, '14:00', '15:00')->assertSessionHasErrors('ends_at');
         $this->assertSame('14:00', $booking->fresh()->ends_at->format('H:i'));
-        foreach ([0, 20, 45, 90] as $maximum) {
+        foreach ([0, -1, 1441, 2.5, 'invalid'] as $maximum) {
             $this->actingAs($teacher)->put(route('consultations.teacher.settings'), ['max_consultation_minutes' => $maximum, 'auto_approve_bookings' => 0, 'show_student_names' => 0])->assertSessionHasErrors('max_consultation_minutes');
         }
+    }
+
+    public function test_teacher_custom_limit_is_saved_and_enforced_for_student_bookings(): void
+    {
+        $teacher = $this->teacher();
+        $period = $this->period($teacher);
+        foreach ([1, 20, 45, 90, 1440] as $maximum) {
+            $this->actingAs($teacher)->put(route('consultations.teacher.settings'), ['max_consultation_minutes' => $maximum, 'auto_approve_bookings' => 0, 'show_student_names' => 0])->assertSessionHasNoErrors();
+            $this->assertSame($maximum, $teacher->teacher->fresh()->max_consultation_minutes);
+        }
+        $this->put(route('consultations.teacher.settings'), ['max_consultation_minutes' => 45, 'auto_approve_bookings' => 0, 'show_student_names' => 0])->assertSessionHasNoErrors();
+        $student = $this->student();
+        $this->book($student, $period, '13:00', '13:46')->assertSessionHasErrors('ends_at');
+        $this->book($student, $period, '13:00', '13:45')->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('consultation_appointments', 1);
     }
 
     public function test_browse_shows_time_range_form_and_free_ranges_exclude_student_bookings_with_other_teachers(): void

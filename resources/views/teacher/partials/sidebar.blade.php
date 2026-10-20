@@ -11,6 +11,7 @@
             <a href="{{ $item['url'] }}" @if($item['active'] ?? false) aria-current="page" @endif>
                 @include('partials.navigation-icon', ['icon' => $item['icon']])
                 <span>{{ $item['desktopLabel'] ?? $item['label'] }}</span>
+                @include('partials.navigation-badge', ['mobileBadge' => false])
             </a>
         @endforeach
     </nav>
@@ -25,6 +26,7 @@
                 <p class="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Your account</p>
                 <a href="{{ route('consultations.teacher-profile.edit') }}" @if(request()->routeIs('consultations.teacher-profile.*')) aria-current="page" @endif>
                     @include('partials.navigation-icon', ['icon' => 'profile'])<span>My profile</span>
+                    @include('partials.navigation-badge', ['item' => collect($items)->firstWhere('icon', 'profile') ?? [], 'mobileBadge' => false])
                 </a>
                 <div class="my-1 border-t border-slate-700"></div>
                 <form method="POST" action="{{ route('consultations.logout') }}">

@@ -10,12 +10,27 @@
     let deferredPrompt = null;
     let installed = isStandalone();
     let dismissedUntil = 0;
-    try {
-        dismissedUntil = Number(localStorage.getItem('consultation-pwa-dismissed-until')) || 0;
-        installed = installed || localStorage.getItem('consultation-pwa-installed') === 'true';
-    } catch (_) { /* Optional preferences. */ }
-    const canSuggest = () => window.isSecureContext && 'serviceWorker' in navigator && isMobile() && !installed && !isStandalone() && Date.now() >= dismissedUntil;
+    const appType = () => /^\/admin(?:\/|$)/.test(location.pathname) ? 'admin' : 'portal';
+    let currentApp = appType();
+    const storageKey = key => `consultation-pwa-${currentApp === 'admin' ? 'admin-' : ''}${key}`;
+    function readPreferences() {
+        installed = isStandalone();
+        dismissedUntil = 0;
+        try {
+            dismissedUntil = Number(localStorage.getItem(storageKey('dismissed-until'))) || 0;
+            installed = installed || localStorage.getItem(storageKey('installed')) === 'true';
+        } catch (_) { /* Optional preferences. */ }
+    }
+    function syncApp() {
+        if (currentApp === appType()) return;
+        currentApp = appType();
+        deferredPrompt = null;
+        readPreferences();
+    }
+    readPreferences();
+    const canSuggest = () => window.isSecureContext && 'serviceWorker' in navigator && isMobile() && !installed && !isStandalone() && Date.now() >= dismissedUntil && !document.querySelector('[data-portal-tour][data-tour-required="true"]');
     function refresh() {
+        syncApp();
         root.dataset.pwaStandalone = String(isStandalone());
         document.querySelectorAll('[data-pwa-install]').forEach(banner => {
             if (canSuggest()) {
@@ -30,12 +45,12 @@
         });
         root.classList.toggle('pwa-install-open', !!document.querySelector('[data-pwa-install][open]'));
         document.querySelectorAll('[data-pwa-install-button]').forEach(button => {
-            button.textContent = deferredPrompt ? 'Install app' : 'How to install';
+            button.textContent = 'Install app';
         });
     }
     function dismissInstall() {
         dismissedUntil = Date.now() + 7 * 24 * 60 * 60 * 1000;
-        try { localStorage.setItem('consultation-pwa-dismissed-until', String(dismissedUntil)); } catch (_) { /* Still dismissed in this visit. */ }
+        try { localStorage.setItem(storageKey('dismissed-until'), String(dismissedUntil)); } catch (_) { /* Still dismissed in this visit. */ }
         refresh();
     }
     function finishLoading() {
@@ -54,6 +69,7 @@
     window.addEventListener('pageshow', event => { if (event.persisted) finishLoading(); });
     document.addEventListener('DOMContentLoaded', ready);
     document.addEventListener('turbo:load', refresh);
+    document.addEventListener('portal-tour:finished', refresh);
     document.addEventListener('turbo:before-cache', () => {
         finishLoading();
         document.querySelectorAll('[data-pwa-instructions][open]').forEach(dialog => dialog.close());
@@ -61,18 +77,19 @@
         root.classList.remove('pwa-install-open');
     });
     window.addEventListener('beforeinstallprompt', event => {
+        syncApp();
         if (!isMobile() || isStandalone()) return;
         event.preventDefault();
         // The browser offering installation again is authoritative (for example,
         // after an uninstall), even if an earlier installation was remembered.
         installed = false;
-        try { localStorage.removeItem('consultation-pwa-installed'); } catch (_) { /* Optional preference. */ }
+        try { localStorage.removeItem(storageKey('installed')); } catch (_) { /* Optional preference. */ }
         deferredPrompt = event;
         refresh();
     });
     window.addEventListener('appinstalled', () => {
         installed = true;
-        try { localStorage.setItem('consultation-pwa-installed', 'true'); } catch (_) { /* Still hidden for this visit. */ }
+        try { localStorage.setItem(storageKey('installed'), 'true'); } catch (_) { /* Still hidden for this visit. */ }
         deferredPrompt = null;
         refresh();
     });

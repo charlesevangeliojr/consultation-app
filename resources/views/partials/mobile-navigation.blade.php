@@ -4,6 +4,11 @@
     @foreach($mobileItems as $item)
         <a href="{{ $item['url'] }}" @if($item['active'] ?? false) aria-current="{{ isset($item['section']) ? 'location' : 'page' }}" @endif @isset($item['section']) data-navigation-section="{{ $item['section'] }}" @endisset>
             <span class="mobile-navigation-icon" aria-hidden="true">@include('partials.navigation-icon', ['icon' => $item['icon']])</span>
+            @if(isset($item['badgeLabel']))
+                @include('partials.navigation-badge', ['mobileBadge' => true])
+            @elseif(($item['badge'] ?? 0) > 0)
+                <span class="admin-approval-badge mobile-approval-badge" data-teacher-approval-count="{{ $item['badge'] }}" aria-label="{{ $item['badge'] }} teachers need scheduling approval">{{ $item['badge'] }}</span>
+            @endif
             <span class="mobile-navigation-label">{{ $item['label'] }}</span>
         </a>
     @endforeach

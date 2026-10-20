@@ -33,7 +33,7 @@ async function run() {
             if (process.env.PWA_SCREENSHOT_DIR) await page.screenshot({ path: `${process.env.PWA_SCREENSHOT_DIR}/install-${theme}.png` });
         }
         assert.equal(await page.locator('[data-pwa-launch]').isVisible(), false, 'Normal browser visits must not show the PWA splash');
-        await banner.locator('[data-pwa-install-button]').click();
+        await banner.getByRole('button', { name: 'Install app', exact: true }).click();
         const dialog = page.locator('[data-pwa-instructions]');
         await dialog.waitFor();
         await dialog.getByText('Open this site in Chrome or Edge.', { exact: false }).waitFor();
@@ -66,7 +66,7 @@ async function run() {
         const ios = await browser.newContext({ userAgent: 'Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1', hasTouch: true, viewport: { width: 768, height: 1024 } });
         const ipad = await ios.newPage();
         await ipad.goto(`${base}/portal/login`);
-        await ipad.locator('[data-pwa-install-button]').click();
+        await ipad.getByRole('button', { name: 'Install app', exact: true }).click();
         await ipad.locator('[data-pwa-instructions]').getByText('In Safari, tap Share,', { exact: false }).waitFor();
         await ipad.getByRole('button', { name: 'Got it' }).click();
         await ipad.getByRole('button', { name: 'Dismiss install suggestion' }).click();
@@ -106,6 +106,20 @@ async function run() {
         assert.equal(await desktop.locator('[data-pwa-install]').isVisible(), false);
         assert.deepEqual(errors, []);
         console.log('PASS desktop: no mobile install suggestion; no JavaScript errors');
+        const separateApps = await browser.newContext({ userAgent: android, isMobile: true, hasTouch: true, viewport: { width: 390, height: 844 } });
+        const adminPage = await separateApps.newPage();
+        await adminPage.goto(`${base}/portal/login`);
+        await adminPage.getByRole('button', { name: 'Not now', exact: true }).click();
+        await adminPage.goto(`${base}/admin/login`);
+        await adminPage.locator('[data-pwa-install]').waitFor();
+        assert.match(await adminPage.locator('#pwa-install-title').textContent(), / Admin$/);
+        assert.equal(await adminPage.locator('link[rel="manifest"]').getAttribute('href'), '/admin/manifest.webmanifest');
+        await adminPage.getByRole('button', { name: 'Not now', exact: true }).click();
+        assert.ok(await adminPage.evaluate(() => localStorage.getItem('consultation-pwa-admin-dismissed-until')));
+        await adminPage.reload();
+        assert.equal(await adminPage.locator('[data-pwa-install]').isVisible(), false);
+        await separateApps.close();
+        console.log('PASS admin: separate manifest, Admin install name, and independent dismissal preferences');
         await mobile.close();
         await ios.close();
         await standalone.close();

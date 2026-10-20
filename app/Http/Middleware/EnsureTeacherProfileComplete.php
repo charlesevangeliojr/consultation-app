@@ -11,7 +11,7 @@ class EnsureTeacherProfileComplete
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        if (! $user?->isTeacher() || $request->routeIs('consultations.teacher-profile.*', 'consultations.logout')) {
+        if (! $user?->isTeacher() || $request->routeIs('consultations.teacher-profile.*', 'consultations.logout', 'consultations.tour.complete')) {
             return $next($request);
         }
         // Never prevent a teacher from freeing a slot or closing an existing booking.

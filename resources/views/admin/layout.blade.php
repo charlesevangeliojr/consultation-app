@@ -34,7 +34,7 @@
                 ['label' => 'Consultations', 'icon' => 'calendar', 'route' => 'admin.consultations', 'pattern' => 'admin.consultations'],
             ]],
             ['label' => 'People & access', 'permission' => 'accounts', 'items' => [
-                ['label' => 'Accounts', 'icon' => 'users', 'route' => 'admin.accounts', 'pattern' => 'admin.accounts*'],
+                ['label' => 'Accounts', 'icon' => 'users', 'route' => 'admin.accounts', 'pattern' => 'admin.accounts*', 'badge' => $pendingTeacherApprovalCount],
                 ['label' => 'Roles & permissions', 'icon' => 'shield', 'route' => 'admin.roles.index', 'pattern' => 'admin.roles.*'],
             ]],
             ['label' => 'Configuration', 'permission' => 'settings', 'items' => [
@@ -50,7 +50,7 @@
                 if ($item['route'] === 'admin.roles.index') continue;
                 $mobileItems[] = ['label' => match ($item['route']) {
                     'admin.school' => 'Grades & sections', 'admin.settings' => 'Settings', default => $item['label'],
-                }, 'icon' => $item['icon'], 'url' => route($item['route']),
+                }, 'icon' => $item['icon'], 'url' => route($item['route']), 'badge' => $item['badge'] ?? 0,
                     'active' => request()->routeIs($item['pattern']) || ($item['route'] === 'admin.accounts' && request()->routeIs('admin.roles.*'))];
             }
         }

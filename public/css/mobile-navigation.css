@@ -4,6 +4,11 @@
 
 .mobile-account-menu { display: none; }
 
+.navigation-count-badge { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; min-width: 20px; height: 20px; margin-left: auto; padding: 0 5px; border-radius: 999px; background: #be123c; color: #fff; font-size: 10px; font-weight: 700; line-height: 1; white-space: nowrap; }
+.mobile-navigation-dock > a { position: relative; }
+.navigation-count-badge-mobile { position: absolute; top: 2px; right: max(2px, calc(50% - 28px)); margin-left: 0; }
+.navigation-count-badge[hidden] { display: none; }
+
 @media (max-width: 1023px) {
     .mobile-account-menu { position: relative; z-index: 40; display: block; flex-shrink: 0; }
     .mobile-account-trigger { display: grid; width: 44px; height: 44px; padding: 3px; place-items: center; border: 1px solid #475569; border-radius: 50%; cursor: pointer; list-style: none; -webkit-tap-highlight-color: transparent; }

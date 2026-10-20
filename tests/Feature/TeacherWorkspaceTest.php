@@ -113,7 +113,7 @@ class TeacherWorkspaceTest extends TestCase
             'date' => today()->addDay()->toDateString(), 'starts_at' => '11:00', 'ends_at' => '09:00', 'location' => 'Keep my location',
         ])->assertRedirect(route('consultations.teacher.availability'))->assertSessionHasErrors('ends_at')
             ->assertSessionHasInput('location', 'Keep my location');
-        $this->from(route('consultations.teacher.preferences'))->put(route('consultations.teacher.settings'), ['max_consultation_minutes' => 1])
+        $this->from(route('consultations.teacher.preferences'))->put(route('consultations.teacher.settings'), ['max_consultation_minutes' => 0])
             ->assertRedirect(route('consultations.teacher.preferences'))->assertSessionHasErrors('max_consultation_minutes');
     }
 

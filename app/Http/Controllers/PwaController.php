@@ -9,11 +9,22 @@ class PwaController extends Controller
 {
     public function manifest(): Response
     {
+        return $this->appManifest(false);
+    }
+
+    public function adminManifest(): Response
+    {
+        return $this->appManifest(true);
+    }
+
+    private function appManifest(bool $admin): Response
+    {
         $name = SiteSetting::current()->name ?: config('app.name', 'Consultation');
         return response(json_encode([
-            'id' => '/', 'name' => $name, 'short_name' => mb_substr($name, 0, 24),
-            'description' => 'School consultation schedules and booking requests.',
-            'start_url' => '/consultations', 'scope' => '/', 'display' => 'standalone',
+            'id' => $admin ? '/admin/' : '/', 'name' => $name.($admin ? ' Admin' : ''),
+            'short_name' => $admin ? mb_substr($name, 0, 18).' Admin' : mb_substr($name, 0, 24),
+            'description' => $admin ? 'School consultation administration and account management.' : 'School consultation schedules and booking requests.',
+            'start_url' => $admin ? '/admin/' : '/consultations', 'scope' => $admin ? '/admin/' : '/', 'display' => 'standalone',
             'background_color' => '#f8fafc', 'theme_color' => '#be123c',
             'icons' => [
                 ['src' => '/pwa/icon-192.png', 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any maskable'],

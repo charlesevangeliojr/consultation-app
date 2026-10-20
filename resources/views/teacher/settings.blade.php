@@ -6,9 +6,9 @@
         <form method="POST" action="{{ route('consultations.teacher.settings') }}" class="space-y-6">
             @csrf @method('PUT')
             <div>
-                <label for="max-consultation-minutes" class="mb-2 block text-sm font-medium">Maximum time per student consultation</label>
-                <select id="max-consultation-minutes" name="max_consultation_minutes" required class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3">@foreach([30 => '30 minutes', 60 => '1 hour'] as $minutes => $label)<option value="{{ $minutes }}" @selected((int) old('max_consultation_minutes', $profile->max_consultation_minutes) === $minutes)>{{ $label }}</option>@endforeach</select>
-                <p class="mt-2 text-xs leading-5 text-slate-400">Students choose a start and end time within your published availability, up to this limit per booking. Changes apply to new requests, including existing availability windows. Existing bookings keep their times.</p>
+                <label for="max-consultation-minutes" class="mb-2 block text-sm font-medium">Maximum time per student consultation (minutes)</label>
+                <input id="max-consultation-minutes" name="max_consultation_minutes" type="number" inputmode="numeric" required min="1" max="1440" step="1" value="{{ old('max_consultation_minutes', $profile->max_consultation_minutes) }}" aria-describedby="maximum-time-help" class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3">
+                <p id="maximum-time-help" class="mt-2 text-xs leading-5 text-slate-400">Enter a whole number of minutes (1–1,440), for example 20, 45, or 90. Students choose a start and end time within your published availability, up to this limit per booking. Changes apply to new requests, including existing availability windows. Existing bookings keep their times.</p>
                 @error('max_consultation_minutes')<p class="mt-2 text-sm text-rose-300">{{ $message }}</p>@enderror
             </div>
             <div>

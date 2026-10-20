@@ -1,6 +1,7 @@
+@php($pwaAppName = ($siteSettings->name ?: config('app.name', 'Consultation')).(request()->is('admin', 'admin/*') ? ' Admin' : ''))
 <div class="pwa-launch" data-pwa-launch role="status" aria-live="polite" aria-label="Opening app" hidden>
     <img src="{{ $siteSettings->logo_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($siteSettings->logo_path) : asset('pwa/icon.svg') }}" alt="" width="72" height="72">
-    <strong>{{ $siteSettings->name ?: config('app.name', 'Consultation') }}</strong>
+    <strong>{{ $pwaAppName }}</strong>
     <span class="pwa-spinner" aria-hidden="true"></span>
     <span>Opening your workspace…</span>
 </div>
@@ -12,7 +13,7 @@
             <span aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-4-4 4 4 4-4M5 17v4h14v-4"/></svg></span>
         </div>
         <span class="pwa-install-eyebrow">YOUR SCHOOL, ONE TAP AWAY</span>
-        <h2 id="pwa-install-title">Install {{ $siteSettings->name ?: config('app.name', 'Consultation') }}</h2>
+        <h2 id="pwa-install-title">Install {{ $pwaAppName }}</h2>
         <p id="pwa-install-description">A little less browsing.<br>A simpler way to stay connected.</p>
     </div>
     <div class="pwa-install-body">

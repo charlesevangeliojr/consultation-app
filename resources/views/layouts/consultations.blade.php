@@ -16,6 +16,8 @@
     <script src="{{ asset('js/mobile-account-menu.js') }}" defer data-turbo-eval="false"></script>
     <script src="{{ asset('js/calendar-schedule-modal.js') }}" defer data-turbo-eval="false"></script>
     @if(auth()->user()->isTeacher() || auth()->user()->isStudent())
+        <link rel="stylesheet" href="{{ asset('css/portal-tour.css') }}">
+        <script src="{{ asset('js/portal-tour.js') }}" defer data-turbo-eval="false"></script>
         <link rel="stylesheet" href="{{ asset('css/teacher-calendar.css') }}">
         <script src="{{ asset('js/teacher-account-menu.js') }}" defer data-turbo-eval="false"></script>
         <script src="{{ asset('js/profile-photo-cropper.js') }}" defer data-turbo-eval="false"></script>
@@ -24,6 +26,7 @@
         <link rel="stylesheet" href="{{ asset('css/student-portal.css') }}">
         <script src="{{ asset('js/student-profile.js') }}" defer data-turbo-eval="false"></script>
         <script src="{{ asset('js/student-booking.js') }}" defer data-turbo-eval="false"></script>
+        <script src="{{ asset('js/student-consultations.js') }}" defer data-turbo-eval="false"></script>
         <script src="{{ asset('js/address-suggestions.js') }}" defer data-turbo-eval="false"></script>
     @endif
     @if(request()->routeIs('consultations.teacher-profile.*', 'consultations.student-profile.*'))
@@ -44,6 +47,7 @@
             $mobileItems = [
                 ['label' => 'Dashboard', 'icon' => 'home', 'url' => route('consultations.dashboard'), 'active' => request()->routeIs('consultations.dashboard')],
                 ['label' => 'Calendar', 'icon' => 'calendar', 'url' => route('consultations.browse'), 'active' => request()->routeIs('consultations.browse')],
+                ['label' => 'Consultations', 'icon' => 'users', 'url' => route('consultations.student-consultations.index'), 'active' => request()->routeIs('consultations.student-consultations.*')],
                 ['label' => 'My profile', 'icon' => 'profile', 'url' => route('consultations.student-profile.edit'), 'active' => request()->routeIs('consultations.student-profile.*')],
             ];
         } elseif (auth()->user()->isTeacher()) {
@@ -56,6 +60,10 @@
                 ['label' => 'My profile', 'icon' => 'profile', 'url' => route('consultations.teacher-profile.edit'), 'active' => request()->routeIs('consultations.teacher-profile.*')],
             ];
         }
+        foreach ($mobileItems as &$navigationItem) {
+            $navigationItem = array_merge($navigationItem, $portalNavigationBadges[$navigationItem['icon']] ?? []);
+        }
+        unset($navigationItem);
     @endphp
     @if (auth()->user()->isStudent())
         @include('student.partials.sidebar', ['items' => $mobileItems])
@@ -65,6 +73,7 @@
                     <a href="{{ route('consultations.home') }}" class="min-w-0 flex-1 truncate text-lg font-bold lg:hidden">{{ $siteSettings->name ?: config('app.name') }}<span class="text-rose-400">.</span></a>
                     <div class="hidden lg:block"><p class="text-xs text-slate-500">Student workspace</p><p class="mt-1 text-sm font-medium text-slate-200">{{ collect($mobileItems)->firstWhere('active', true)['label'] ?? 'Student portal' }}</p></div>
                     <div class="theme-navbar-actions">
+                        @include('partials.portal-tour-button')
                         @include('partials.theme-toggle')
                         <a href="{{ route('consultations.student-profile.edit') }}" aria-label="Edit your student profile" class="hidden min-w-0 items-center gap-2 text-sm text-slate-400 lg:flex lg:max-w-xs">
                             @include('student.partials.avatar', ['avatarSize' => 'h-9 w-9'])<span class="truncate">{{ auth()->user()->name }}</span>
@@ -88,6 +97,7 @@
                     <a href="{{ route('consultations.home') }}" class="min-w-0 flex-1 truncate text-lg font-bold lg:hidden">{{ $siteSettings->name ?: 'ConSync' }}<span class="text-rose-400">.</span></a>
                     <div class="hidden lg:block"><p class="text-xs text-slate-500">Teacher workspace</p><p class="mt-1 text-sm font-medium text-slate-200">{{ collect($mobileItems)->firstWhere('active', true)['desktopLabel'] ?? collect($mobileItems)->firstWhere('active', true)['label'] ?? 'Teacher portal' }}</p></div>
                     <div class="theme-navbar-actions">
+                        @include('partials.portal-tour-button')
                         @include('partials.theme-toggle')
                         <div class="hidden min-w-0 items-center gap-3 lg:flex">
                             <a href="{{ route('consultations.teacher-profile.edit') }}" aria-label="Edit your teacher profile" class="flex min-w-0 items-center gap-2 text-sm text-slate-400 sm:max-w-xs">
@@ -127,5 +137,8 @@
         </main>
     @endif
     @include('partials.mobile-navigation', ['mobileLabel' => auth()->user()->isStudent() ? 'Student mobile navigation' : 'Teacher mobile navigation'])
+    @if(auth()->user()->isTeacher() || auth()->user()->isStudent())
+        @include('partials.portal-tour')
+    @endif
 </body>
 </html>

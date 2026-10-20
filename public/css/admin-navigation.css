@@ -1,5 +1,9 @@
 .admin-shell { min-height: 100vh; }
 .admin-content { min-width: 0; }
+.admin-approval-badge { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: #be123c; color: #fff; font-size: 10px; font-weight: 700; line-height: 1; }
+.admin-navigation-link > .admin-approval-badge { margin-left: auto; }
+.admin-workspace .mobile-navigation-dock > a { position: relative; }
+.admin-workspace .mobile-approval-badge { position: absolute; top: 2px; right: max(2px, calc(50% - 28px)); }
 .admin-sidebar { display: none; }
 .admin-brand { display: flex; min-width: 0; align-items: center; gap: 12px; padding: 24px 20px; border-bottom: 1px solid #1e293b; text-decoration: none; }
 .admin-brand > img, .admin-brand-icon { width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; object-fit: contain; }

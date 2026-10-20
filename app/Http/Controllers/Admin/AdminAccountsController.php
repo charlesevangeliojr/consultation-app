@@ -16,13 +16,25 @@ class AdminAccountsController extends Controller
 {
     public function index(): View
     {
-        $filters = request()->validate(['search' => ['nullable', 'string', 'max:150']]);
+        $filters = request()->validate([
+            'search' => ['nullable', 'string', 'max:150'],
+            'group' => ['nullable', \Illuminate\Validation\Rule::in(['all', 'admins', 'teachers', 'students', 'pending'])],
+        ]);
+        $group = $filters['group'] ?? 'all';
         $search = trim($filters['search'] ?? '');
         $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($search)).'%';
         AccountActivity::deactivateDormantStudents();
-        $users = User::query()
-            ->with(['role', 'teacher', 'student.section', 'student.gradeLevel'])
-            ->when(! request()->user()->isAdmin(), fn ($query) => $query->whereDoesntHave('role', fn ($roles) => $roles->where('is_super_admin', true)))
+        $base = User::query()
+            ->when(! request()->user()->isAdmin(), fn ($query) => $query->whereDoesntHave('role', fn ($roles) => $roles->where('is_super_admin', true)));
+        $teacherRoles = fn ($roles) => $roles->whereRaw('LOWER(name) LIKE ?', ['%teacher%'])->orWhereRaw('LOWER(name) LIKE ?', ['%faculty%']);
+        $studentRoles = fn ($roles) => $roles->whereRaw('LOWER(name) LIKE ?', ['%student%']);
+        $pendingCount = (clone $base)->whereHas('role', $teacherRoles)
+            ->whereDoesntHave('teacher', fn ($teacher) => $teacher->where('consultation_approved', true))->count();
+        $users = $base->with(['role', 'teacher', 'student.section', 'student.gradeLevel'])
+            ->when(in_array($group, ['teachers', 'pending']), fn ($query) => $query->whereHas('role', $teacherRoles))
+            ->when($group === 'students', fn ($query) => $query->whereHas('role', $studentRoles))
+            ->when($group === 'admins', fn ($query) => $query->whereDoesntHave('role', $teacherRoles)->whereDoesntHave('role', $studentRoles))
+            ->when($group === 'pending', fn ($query) => $query->whereDoesntHave('teacher', fn ($teacher) => $teacher->where('consultation_approved', true)))
             ->when($search !== '', function ($query) use ($pattern) {
                 $query->where(function ($matches) use ($pattern) {
                     $matches->whereRaw("LOWER(users.name) LIKE ? ESCAPE '!'", [$pattern])
@@ -37,7 +49,7 @@ class AdminAccountsController extends Controller
             ->orderBy('id')
             ->paginate(15)->withQueryString();
 
-        return view('admin.accounts', compact('users', 'search'));
+        return view('admin.accounts', compact('users', 'search', 'group', 'pendingCount'));
     }
 
     public function create(): View

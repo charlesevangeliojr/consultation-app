@@ -14,13 +14,20 @@ class ConsultationAppointment extends Model
 
     protected function casts(): array
     {
-        return ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'is_proposed' => 'boolean'];
+        return ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'is_proposed' => 'boolean', 'student_rejection_seen_at' => 'datetime'];
     }
 
     public function scopeReservesTeacherTime(Builder $query): void
     {
         $query->whereNotIn('status', ['cancelled', 'rejected'])
             ->where(fn ($query) => $query->where('is_proposed', false)->orWhere('status', '!=', 'pending'));
+    }
+
+    public function scopeNeedsStudentAttention(Builder $query): void
+    {
+        $query->where(fn ($items) => $items
+            ->where(fn ($active) => $active->whereIn('status', ['pending', 'confirmed'])->where('ends_at', '>', now()))
+            ->orWhere(fn ($rejected) => $rejected->where('status', 'rejected')->whereNull('student_rejection_seen_at')));
     }
 
     public function rejectionMessage(): ?string

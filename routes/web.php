@@ -17,6 +17,7 @@ use App\Models\User;
 use App\Http\Controllers\PwaController;
 
 Route::get('/manifest.webmanifest', [PwaController::class, 'manifest'])->name('pwa.manifest');
+Route::get('/admin/manifest.webmanifest', [PwaController::class, 'adminManifest'])->name('pwa.admin-manifest');
 
 Route::get('/', function () {
     $publicAvailability = ConsultationAvailability::query()
@@ -53,6 +54,9 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth', \App\Http\Middleware\RefreshProposedConsultationRequests::class, \App\Http\Middleware\EnsureTeacherProfileComplete::class])->prefix('consultations')->name('consultations.')->group(function () {
     Route::get('/', [ConsultationController::class, 'home'])->name('home');
     Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('dashboard');
+    Route::post('/tour/complete', [\App\Http\Controllers\PortalTourController::class, 'complete'])->name('tour.complete');
+    Route::get('/student/consultations', [\App\Http\Controllers\StudentConsultationsController::class, 'index'])->name('student-consultations.index');
+    Route::post('/student/consultations/seen', [\App\Http\Controllers\StudentConsultationsController::class, 'seen'])->name('student-consultations.seen');
     Route::get('/browse', [ConsultationController::class, 'browse'])->name('browse');
     Route::get('/student/profile', [StudentProfileController::class, 'edit'])->name('student-profile.edit');
     Route::put('/student/profile', [StudentProfileController::class, 'update'])->name('student-profile.update');

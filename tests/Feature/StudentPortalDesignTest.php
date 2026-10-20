@@ -24,7 +24,7 @@ class StudentPortalDesignTest extends TestCase
     public function test_student_pages_share_full_width_shell_avatar_account_menu_and_active_navigation(): void
     {
         $user = $this->student();
-        foreach (['consultations.dashboard', 'consultations.browse', 'consultations.student-profile.edit'] as $route) {
+        foreach (['consultations.dashboard', 'consultations.browse', 'consultations.student-consultations.index', 'consultations.student-profile.edit'] as $route) {
             $response = $this->actingAs($user)->get(route($route))->assertOk()
                 ->assertSee('student-portal.css')->assertSee('Student workspace')
                 ->assertSee('Student sidebar')->assertSee('data-student-account-menu', false)
