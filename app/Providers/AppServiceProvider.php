@@ -13,7 +13,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(\App\Contracts\PushTransport::class, \App\Support\WebPushTransport::class);
     }
 
     /**
@@ -21,6 +21,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        foreach (['push-status' => 30, 'push-subscribe' => 10, 'push-test' => 2, 'notification-summary' => 60] as $name => $limit) {
+            \Illuminate\Support\Facades\RateLimiter::for($name, fn (\Illuminate\Http\Request $request) => \Illuminate\Cache\RateLimiting\Limit::perMinute($limit)->by((string) $request->user()?->id));
+        }
+        \App\Models\ConsultationAppointment::observe(\App\Observers\ConsultationPushObserver::class);
+        \App\Models\Teacher::observe(\App\Observers\TeacherPushObserver::class);
+        View::composer(['admin.layout', 'layouts.consultations'], function ($view): void {
+            $count = auth()->check() && \Illuminate\Support\Facades\Schema::hasTable('account_notifications')
+                ? \App\Models\AccountNotification::where('user_id', auth()->id())->whereNull('read_at')->count() : 0;
+            $view->with('notificationUnreadCount', $count);
+        });
         View::composer(['welcome', 'admin.*', 'student.*', 'teacher.*', 'layouts.*', 'auth.*'], function ($view): void {
             $view->with('siteSettings', SiteSetting::current());
         });

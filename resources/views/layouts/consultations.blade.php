@@ -11,6 +11,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.12/dist/turbo.es2017-umd.js" defer></script>
     <link rel="stylesheet" href="{{ asset('css/mobile-navigation.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/notification-inbox.css') }}?v=1">
+    <script src="{{ asset('js/notification-inbox.js') }}?v=2" defer data-turbo-eval="false" data-turbo-track="reload"></script>
+    <script src="{{ asset('js/push-notifications.js') }}?v=2" defer data-turbo-eval="false" data-turbo-track="reload"></script>
     <link rel="stylesheet" href="{{ asset('css/responsive-calendar.css') }}">
     <script src="{{ asset('js/mobile-navigation.js') }}" defer></script>
     <script src="{{ asset('js/mobile-account-menu.js') }}" defer data-turbo-eval="false"></script>
@@ -41,6 +44,7 @@
 </head>
 <body class="has-mobile-navigation min-h-screen bg-slate-950 text-slate-100 antialiased">
     @include('partials.pwa-ui')
+    @include('partials.push-config')
     @php
         $mobileItems = [];
         if (auth()->user()->isStudent()) {
@@ -73,6 +77,7 @@
                     <a href="{{ route('consultations.home') }}" class="min-w-0 flex-1 truncate text-lg font-bold lg:hidden">{{ $siteSettings->name ?: config('app.name') }}<span class="text-rose-400">.</span></a>
                     <div class="hidden lg:block"><p class="text-xs text-slate-500">Student workspace</p><p class="mt-1 text-sm font-medium text-slate-200">{{ collect($mobileItems)->firstWhere('active', true)['label'] ?? 'Student portal' }}</p></div>
                     <div class="theme-navbar-actions">
+                        @include('partials.notification-bell')
                         @include('partials.portal-tour-button')
                         @include('partials.theme-toggle')
                         <a href="{{ route('consultations.student-profile.edit') }}" aria-label="Edit your student profile" class="hidden min-w-0 items-center gap-2 text-sm text-slate-400 lg:flex lg:max-w-xs">
@@ -97,6 +102,7 @@
                     <a href="{{ route('consultations.home') }}" class="min-w-0 flex-1 truncate text-lg font-bold lg:hidden">{{ $siteSettings->name ?: 'ConSync' }}<span class="text-rose-400">.</span></a>
                     <div class="hidden lg:block"><p class="text-xs text-slate-500">Teacher workspace</p><p class="mt-1 text-sm font-medium text-slate-200">{{ collect($mobileItems)->firstWhere('active', true)['desktopLabel'] ?? collect($mobileItems)->firstWhere('active', true)['label'] ?? 'Teacher portal' }}</p></div>
                     <div class="theme-navbar-actions">
+                        @include('partials.notification-bell')
                         @include('partials.portal-tour-button')
                         @include('partials.theme-toggle')
                         <div class="hidden min-w-0 items-center gap-3 lg:flex">

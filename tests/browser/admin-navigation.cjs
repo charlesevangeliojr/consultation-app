@@ -33,7 +33,7 @@ async function run() {
         }
         await page.setViewportSize({ width: 390, height: 844 });
         const navigation = page.locator('[data-mobile-navigation]');
-        await navigation.getByRole('link', { name: 'Accounts', exact: true }).click();
+        await navigation.locator('a[href$="/admin/accounts"]').click();
         await page.waitForURL('**/admin/accounts');
         await page.getByRole('navigation', { name: 'People and access navigation' }).getByRole('link', { name: 'Roles & permissions' }).click();
         await page.waitForURL('**/admin/roles');
@@ -43,8 +43,15 @@ async function run() {
         await account.locator('summary').click();
         await account.getByRole('link', { name: 'My profile', exact: true }).click();
         await page.waitForURL('**/admin/profile');
-        await account.locator('summary').click();
-        await account.getByRole('button', { name: 'Sign out', exact: true }).click();
+        await page.getByRole('heading', { name: 'Edit Profile', exact: true, level: 2 }).waitFor();
+        await page.waitForFunction(() => document.documentElement.getAttribute('aria-busy') !== 'true');
+        if (!await account.evaluate(element => element.open)) await account.locator('summary').click();
+        await account.getByRole('button', { name: 'Sign out', exact: true }).click({ timeout: 5000 }).catch(async () => {
+            throw new Error(JSON.stringify(await page.evaluate(() => {
+                const menu = document.querySelector('[data-mobile-account-menu]');
+                return { path: location.pathname, open: menu?.open, buttons: [...(menu?.querySelectorAll('button') || [])].map(button => ({ text: button.textContent.trim(), display: getComputedStyle(button).display })), activeClass: document.activeElement?.className, dialogs: [...document.querySelectorAll('dialog[open]')].map(dialog => dialog.className) };
+            })));
+        });
         await page.waitForURL('**/admin/login');
         assert.deepEqual(errors, []);
         console.log('PASS mobile navigation: Accounts, role tabs, Grades & sections, profile and sign out remain accessible without a sidebar');

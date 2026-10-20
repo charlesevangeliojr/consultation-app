@@ -30,7 +30,7 @@ class LandingPageTest extends TestCase
             ->assertSee('Only teachers control individual booking decisions')
             ->assertSee('unseen rejections')->assertSee('Share, then Add to Home Screen')
             ->assertSee('not guaranteed free slots')->assertSee('Asia/Manila')
-            ->assertSee('no email, SMS, or web push reminders')->assertSee('not cached for offline use')
+            ->assertSee('no email, SMS, or scheduled reminder messages')->assertSee('not cached for offline use')
             ->assertSee(route('register', ['role' => 'student']), false)
             ->assertSee(route('register', ['role' => 'teacher']), false)
             ->assertSee(route('admin.login'), false)

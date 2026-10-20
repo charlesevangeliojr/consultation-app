@@ -321,7 +321,7 @@ class ConsultationController extends Controller
             $period = ConsultationAvailability::whereKey($availability->id)->lockForUpdate()->firstOrFail();
             if ($period->cancelled_at) return;
             $period->update(['cancelled_at' => now()]);
-            $period->appointments()->whereIn('status', ['pending', 'confirmed'])->update(['status' => 'rejected']);
+            $period->appointments()->whereIn('status', ['pending', 'confirmed'])->get()->each(fn ($booking) => $booking->update(['status' => 'rejected']));
         });
 
         return redirect()->route('consultations.teacher.availability')->with('status', 'Availability cancelled. All pending and confirmed bookings in this window were automatically rejected.');
@@ -346,6 +346,7 @@ class ConsultationController extends Controller
 
     public function logout(Request $request): RedirectResponse
     {
+        PushSubscriptionController::forgetSession($request);
         $request->user()->forceFill(['last_logged_out_at' => now()])->saveQuietly();
         auth()->logout();
         $request->session()->invalidate();

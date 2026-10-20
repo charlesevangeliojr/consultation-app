@@ -14,6 +14,9 @@
     <link rel="stylesheet" href="{{ asset('css/admin-navigation.css') }}">
     @if(request()->routeIs('admin.dashboard'))<link rel="stylesheet" href="{{ asset('css/admin-dashboard.css') }}">@endif
     <link rel="stylesheet" href="{{ asset('css/admin-consultations.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/notification-inbox.css') }}?v=1">
+    <script src="{{ asset('js/notification-inbox.js') }}?v=2" defer data-turbo-eval="false" data-turbo-track="reload"></script>
+    <script src="{{ asset('js/push-notifications.js') }}?v=2" defer data-turbo-eval="false" data-turbo-track="reload"></script>
     @if(request()->routeIs('admin.consultations'))<link rel="stylesheet" href="{{ asset('css/responsive-calendar.css') }}">@endif
     <script src="{{ asset('js/admin-consultations.js') }}" defer data-turbo-eval="false"></script>
     <script src="{{ asset('js/mobile-navigation.js') }}" defer></script>
@@ -27,6 +30,7 @@
 </head>
 <body @class(['admin-workspace has-mobile-navigation min-h-screen bg-slate-950 text-white antialiased', 'user-management' => request()->routeIs('admin.accounts*', 'admin.roles.*')])>
     @include('partials.pwa-ui')
+    @include('partials.push-config')
     @php
         $adminGroups = [
             ['label' => 'Overview', 'permission' => 'dashboard', 'items' => [
@@ -68,6 +72,7 @@
                 </div>
                 <div class="theme-navbar-actions">
                     <span class="admin-access-label">{{ auth()->user()->isAdmin() ? 'Super Admin' : 'Administrator' }}</span>
+                    @include('partials.notification-bell')
                     @include('partials.theme-toggle')
                     @include('partials.mobile-account-menu', ['mobileLogoutUrl' => route('admin.logout'), 'mobileProfileUrl' => route('admin.profile.edit')])
                 </div>

@@ -8,7 +8,8 @@
     "require": {
         "php": "^8.2",
         "laravel/framework": "^12.0",
-        "laravel/tinker": "^2.10.1"
+        "laravel/tinker": "^2.10.1",
+        "minishlink/web-push": "^11.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -77,6 +78,7 @@
         "preferred-install": "dist",
         "sort-packages": true,
         "allow-plugins": {
+            "php-http/discovery": false,
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
         }

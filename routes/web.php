@@ -43,6 +43,17 @@ Route::post('/admin/login', [AdminLoginController::class, 'store'])->middleware(
 Route::get('/portal/login', [ConsultationController::class, 'login'])->name('portal.login');
 Route::post('/portal/login', [ConsultationController::class, 'authenticate'])->middleware('throttle:5,1')->name('portal.login.store');
 Route::post('/account/activity', fn () => response()->noContent())->middleware(['auth', 'throttle:10,1'])->name('account.activity');
+Route::middleware('auth')->prefix('notifications')->name('notifications.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\NotificationInboxController::class, 'index'])->name('index');
+    Route::get('/settings', [\App\Http\Controllers\PushSubscriptionController::class, 'index'])->name('settings');
+    Route::get('/summary', [\App\Http\Controllers\NotificationInboxController::class, 'summary'])->middleware('throttle:notification-summary')->name('summary');
+    Route::post('/read-all', [\App\Http\Controllers\NotificationInboxController::class, 'readAll'])->name('read-all');
+    Route::post('/{id}/read', [\App\Http\Controllers\NotificationInboxController::class, 'read'])->whereNumber('id')->name('read');
+    Route::post('/status', [\App\Http\Controllers\PushSubscriptionController::class, 'status'])->middleware('throttle:push-status')->name('status');
+    Route::post('/subscriptions', [\App\Http\Controllers\PushSubscriptionController::class, 'store'])->middleware('throttle:push-subscribe')->name('store');
+    Route::delete('/subscriptions', [\App\Http\Controllers\PushSubscriptionController::class, 'destroy'])->middleware('throttle:push-subscribe')->name('destroy');
+    Route::post('/test', [\App\Http\Controllers\PushSubscriptionController::class, 'test'])->middleware('throttle:push-test')->name('test');
+});
 Route::middleware('guest')->group(function () {
     Route::get('/register', [RegistrationController::class, 'create'])->name('register');
     Route::post('/register', [RegistrationController::class, 'store'])->middleware('throttle:5,1')->name('register.store');

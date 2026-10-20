@@ -28,6 +28,17 @@ reflected in page metadata immediately, but social sites may cache previews.
 InfinityFree's JavaScript security challenge can prevent preview crawlers from
 reading either the page or image; metadata alone cannot bypass that host restriction.
 
+For background phone/desktop notifications, see **[Web Push setup](docs/web-push.md)**.
+It covers the one-time private VAPID keys, migration/dependency deployment,
+account-menu opt-in, iPhone Home Screen requirements, and InfinityFree limitations.
+The navbar bell opens a per-account inbox. Device Enable/Disable/Test controls
+are separate in Notification settings (also School settings for admins and
+Consultation settings for teachers), not on the admin dashboard. Hosts without a
+terminal can import `database/sql/notifications-schema.sql` in phpMyAdmin to add
+the notification tables without resetting records.
+Push is disabled until the hosted environment is configured; no third-party
+account or secrets are included in the repository.
+
 For sample accounts and a MySQL/MariaDB data snapshot, see
 [Demo credentials and SQL import](docs/demo-data.md).
 

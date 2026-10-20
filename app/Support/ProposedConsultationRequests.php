@@ -47,6 +47,6 @@ class ProposedConsultationRequests
     {
         return static::pending()->where('teacher_id', $accepted->teacher_id)->where('id', '!=', $accepted->id)
             ->where('starts_at', '<', $accepted->ends_at)->where('ends_at', '>', $accepted->starts_at)
-            ->update(['status' => 'rejected', 'rejection_reason' => 'time_taken']);
+            ->get()->each(fn ($booking) => $booking->update(['status' => 'rejected', 'rejection_reason' => 'time_taken']))->count();
     }
 }

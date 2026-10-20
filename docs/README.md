@@ -24,3 +24,4 @@ The guide covers:
 | [Project README](../README.md) | Local setup, running the app, and starting scheduled tasks. |
 | [Consultation workflow reference](consultation-workflow.md) | Detailed workflow rules, installation notes, and verification commands. |
 | [Demo accounts and SQL data](demo-data.md) | Fictional test accounts, sample records, and database import/export details. |
+| [Web Push notifications](web-push.md) | Background phone/desktop notifications, private server setup, device opt-in, and hosting limits. |

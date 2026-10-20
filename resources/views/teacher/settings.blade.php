@@ -31,4 +31,5 @@
             <button type="submit" class="rounded-lg bg-rose-500 px-5 py-3 text-sm font-semibold hover:bg-rose-400">Save preferences</button>
         </form>
     </section>
+    <div class="max-w-3xl">@include('partials.notification-device-settings')</div>
 @endsection

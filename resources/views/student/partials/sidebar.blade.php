@@ -22,6 +22,7 @@
                 <p class="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Your account</p>
                 <a href="{{ route('consultations.student-profile.edit') }}" @if(request()->routeIs('consultations.student-profile.*')) aria-current="page" @endif>@include('partials.navigation-icon', ['icon' => 'profile'])<span>My profile</span></a>
                 <div class="my-1 border-t border-slate-700"></div>
+                <a href="{{ route('notifications.index') }}">@include('partials.navigation-icon', ['icon' => 'bell'])<span>Notifications</span></a>
                 <form method="POST" action="{{ route('consultations.logout') }}">@csrf<button type="submit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H5v16h4M9 12h12m-4-4 4 4-4 4"/></svg><span>Sign out</span></button></form>
             </nav>
         </details>

@@ -29,7 +29,12 @@ async function run() {
                     const response = await fetch(path, { credentials, cache: 'no-store' });
                     const text = await response.text();
                     const type = response.headers.get('content-type');
-                    return { path, credentials, status: response.status, type, challenge: text.includes('slowAES') || text.includes('/aes.js'), preview: type?.startsWith('image/') ? '(image bytes)' : text.slice(0, 110) };
+                    return { path, credentials, status: response.status, finalPath: new URL(response.url).pathname, type,
+                        challenge: text.includes('slowAES') || text.includes('/aes.js'),
+                        hasPushHandler: text.includes("addEventListener('push'"),
+                        hasNotificationClickHandler: text.includes("addEventListener('notificationclick'"),
+                        hasNotificationSettingsClient: text.includes('data-push-settings') && text.includes('pushManager.subscribe'),
+                        preview: type?.startsWith('image/') ? '(image bytes)' : text.slice(0, 110) };
                 } catch (error) { return { path, credentials, error: error.message }; }
             };
             let worker;
@@ -43,7 +48,7 @@ async function run() {
                 manifest: { href: manifest.getAttribute('href'), crossorigin: manifest.getAttribute('crossorigin') },
                 resources: await Promise.all([
                     inspect(manifest.href, 'omit'), inspect(manifest.href), inspect('/sw.js'), inspect('/pwa/icon-192.png'),
-                    inspect('/js/pwa.js'),
+                    inspect('/js/pwa.js'), inspect('/js/push-notifications.js'), inspect('/notifications'),
                 ]), worker,
             };
         });
