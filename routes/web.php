@@ -13,7 +13,6 @@ use App\Http\Controllers\StudentProfileController;
 use App\Http\Controllers\TeacherProfileController;
 use App\Http\Controllers\StudentDashboardController;
 use App\Models\ConsultationAvailability;
-use App\Models\User;
 use App\Http\Controllers\PwaController;
 
 Route::get('/manifest.webmanifest', [PwaController::class, 'manifest'])->name('pwa.manifest');
@@ -22,23 +21,16 @@ Route::get('/admin/manifest.webmanifest', [PwaController::class, 'adminManifest'
 Route::get('/', function () {
     $publicAvailability = ConsultationAvailability::query()
         ->with('teacher')
-        ->whereDate('date', '>=', today())
+        ->where(fn ($query) => $query->whereDate('date', '>', today())
+            ->orWhere(fn ($today) => $today->whereDate('date', today())->where('ends_at', '>', now()->format('H:i:s'))))
         ->whereNull('cancelled_at')
         ->whereHas('teacher', fn ($query) => $query->whereHas('teacher', fn ($profile) => $profile->where('consultation_approved', true)))
+        ->whereHas('teacher.role', fn ($role) => $role->whereRaw('LOWER(name) LIKE ?', ['%teacher%'])->orWhereRaw('LOWER(name) LIKE ?', ['%faculty%']))
         ->orderBy('date')
         ->orderBy('starts_at')
         ->limit(12)
         ->get();
-    $publicTeachers = User::query()
-        ->whereIn('id', $publicAvailability->pluck('teacher_id')->unique())
-        ->with(['role'])
-        ->get()
-        ->map(function (User $teacher) use ($publicAvailability) {
-            $teacher->setRelation('publicAvailability', $publicAvailability->where('teacher_id', $teacher->id)->values());
-            return $teacher;
-        });
-
-    return view('welcome', compact('publicAvailability', 'publicTeachers'));
+    return view('welcome', compact('publicAvailability'));
 });
 
 Route::get('/admin/login', [AdminLoginController::class, 'create'])->name('admin.login');

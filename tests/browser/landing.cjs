@@ -1,0 +1,48 @@
+// Public pages only. Optional APP_TEST_URL, PLAYWRIGHT_MODULE, CHROME_PATH and LANDING_SCREENSHOT_DIR.
+const assert = require('node:assert/strict');
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const base = process.env.APP_TEST_URL || 'http://127.0.0.1:8096';
+
+async function run() {
+    const browser = await chromium.launch({ headless: true, ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}) });
+    try {
+        const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+        await page.addInitScript(() => localStorage.setItem('consultation-pwa-dismissed-until', String(Date.now() + 86400000)));
+        const errors = [];
+        page.on('pageerror', error => errors.push(error.message));
+        await page.goto(base);
+        await page.getByRole('heading', { name: 'Need academic help? Find a time to talk.' }).waitFor();
+        for (const theme of ['light', 'dark']) {
+            await page.emulateMedia({ colorScheme: theme });
+            await page.waitForFunction(value => document.documentElement.dataset.theme === value, theme);
+            for (const width of [320, 390, 768, 1024, 1440]) {
+                await page.setViewportSize({ width, height: 844 });
+                assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `Landing overflows at ${width}px in ${theme}`);
+                if (width < 1024) {
+                    const button = page.getByRole('button', { name: 'Open navigation menu', exact: true });
+                    await button.click();
+                    await page.locator('#landing-mobile-menu').getByRole('link', { name: 'How to use', exact: true }).click();
+                    assert.equal(await page.locator('#landing-mobile-menu').isVisible(), false);
+                    await button.click();
+                    await page.keyboard.press('Escape');
+                    assert.equal(await page.locator('#landing-mobile-menu').isVisible(), false);
+                }
+            }
+            if (process.env.LANDING_SCREENSHOT_DIR) {
+                await page.setViewportSize({ width: 390, height: 844 });
+                await page.goto(base);
+                await page.screenshot({ path: `${process.env.LANDING_SCREENSHOT_DIR}/landing-${theme}.png`, fullPage: true });
+            }
+        }
+        const question = page.locator('summary', { hasText: 'What do the booking statuses mean?' });
+        await question.click();
+        assert.equal(await question.evaluate(element => element.parentElement.open), true);
+        assert.equal(await page.getByRole('link', { name: 'Register as a student', exact: false }).getAttribute('href'), `${base}/register?role=student`);
+        assert.equal(await page.getByRole('link', { name: 'Register as a teacher', exact: false }).getAttribute('href'), `${base}/register?role=teacher`);
+        const invalidAnchors = await page.locator('a[href^="#"]').evaluateAll(links => links.map(link => link.getAttribute('href')).filter(href => !document.getElementById(href.slice(1))));
+        assert.deepEqual(invalidAnchors, []);
+        assert.deepEqual(errors, []);
+        console.log('PASS landing: accurate role guides, public preview, working section links, registration CTAs, FAQ, mobile menu/Escape, and 320–1440px layout in both themes');
+    } finally { await browser.close(); }
+}
+run().catch(error => { console.error(error); process.exitCode = 1; });
