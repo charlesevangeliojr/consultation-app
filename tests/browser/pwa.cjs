@@ -125,6 +125,7 @@ async function run() {
         assert.equal(await app.evaluate(() => window.splashWasVisible), true);
         assert.equal(await app.locator('[data-pwa-launch]').isVisible(), false);
         assert.equal(await app.locator('[data-pwa-install]').isVisible(), false);
+        assert.equal(await app.evaluate(() => localStorage.getItem('consultation-pwa-installed')), 'true', 'Opening standalone mode must remember installation');
         console.log('PASS installed mode: startup splash appears then clears; no reinstall prompt');
 
         const desktop = await browser.newPage({ hasTouch: false });
@@ -181,6 +182,35 @@ async function run() {
         assert.ok(JSON.parse(checkedManifest.data).name);
         await protectedHost.close();
         console.log('PASS shared-hosting install: real browser manifest requests include security cookies and parse without errors');
+        const detected = await browser.newContext({ userAgent: android, hasTouch: true, viewport: { width: 390, height: 844 } });
+        await detected.addInitScript(() => {
+            navigator.getInstalledRelatedApps = async () => [{ platform: 'webapp', url: `${location.origin}/manifest.webmanifest`, id: `${location.origin}/` }];
+        });
+        const detectedPage = await detected.newPage();
+        await detectedPage.goto(`${base}/portal/login`);
+        await detectedPage.waitForFunction(() => localStorage.getItem('consultation-pwa-installed') === 'true');
+        assert.equal(await detectedPage.locator('[data-pwa-install]').isVisible(), false);
+        await detectedPage.goto(`${base}/admin/login`);
+        await detectedPage.locator('[data-pwa-install]').waitFor();
+        assert.equal(await detectedPage.evaluate(() => localStorage.getItem('consultation-pwa-admin-installed')), null, 'Portal installation must not hide the Admin install suggestion');
+        await detected.close();
+        const saved = await browser.newContext({ userAgent: android, hasTouch: true });
+        const savedPage = await saved.newPage();
+        await savedPage.goto(`${base}/portal/login`);
+        await savedPage.locator('[data-pwa-install]').waitFor();
+        await savedPage.evaluate(() => dispatchEvent(new Event('appinstalled')));
+        await savedPage.reload();
+        assert.equal(await savedPage.locator('[data-pwa-install]').isVisible(), false, 'Confirmed installations stay hidden after reload');
+        await saved.close();
+        const iosConfirmed = await browser.newContext({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1', hasTouch: true });
+        const iosPage = await iosConfirmed.newPage();
+        await iosPage.goto(`${base}/portal/login`);
+        await iosPage.getByRole('button', { name: 'Install app', exact: true }).click();
+        await iosPage.getByRole('button', { name: 'I’ve added the app', exact: true }).click();
+        await iosPage.reload();
+        assert.equal(await iosPage.locator('[data-pwa-install]').isVisible(), false);
+        await iosConfirmed.close();
+        console.log('PASS install detection: related-app detection, standalone persistence, appinstalled reload persistence, separate Admin state, and iOS confirmation');
         await mobile.close();
         await ios.close();
         await standalone.close();

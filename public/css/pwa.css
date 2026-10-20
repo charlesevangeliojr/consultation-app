@@ -1,4 +1,6 @@
 .pwa-launch[hidden], .pwa-install[hidden] { display: none; }
+[data-pwa-install-button][hidden], [data-pwa-install-confirm][hidden] { display: none !important; }
+.pwa-instructions [data-pwa-install-confirm] { margin: 0 8px 12px 0; }
 html[data-pwa-standalone="true"][data-pwa-loading="true"] .pwa-launch { position: fixed; z-index: 1000; inset: 0; display: flex !important; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; background: var(--theme-page, #f8fafc); color: var(--theme-text, #0f172a); text-align: center; }
 .pwa-launch img { border-radius: 20px; }
 .pwa-launch strong { max-width: 100%; font-size: 22px; overflow-wrap: anywhere; }

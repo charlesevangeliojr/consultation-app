@@ -17,6 +17,8 @@ class PwaTest extends TestCase
         $this->get('/manifest.webmanifest')->assertOk()->assertHeader('Content-Type', 'application/manifest+json')
             ->assertJsonPath('name', 'Fictional School')->assertJsonPath('start_url', '/consultations')
             ->assertJsonPath('scope', '/')->assertJsonPath('display', 'standalone')
+            ->assertJsonPath('prefer_related_applications', false)
+            ->assertJsonPath('related_applications.0.url', url('/manifest.webmanifest'))
             ->assertJsonPath('icons.0.sizes', '192x192')->assertJsonPath('icons.1.sizes', '512x512');
         foreach ([192, 512] as $size) {
             $dimensions = getimagesize(public_path("pwa/icon-{$size}.png"));

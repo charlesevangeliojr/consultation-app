@@ -11,14 +11,23 @@ async function run() {
         const errors = [];
         page.on('pageerror', error => errors.push(error.message));
         await page.goto(base);
-        await page.getByRole('heading', { name: 'Need academic help? Find a time to talk.' }).waitFor();
+        await page.getByRole('heading', { name: 'Big questions. Let’s make time.' }).waitFor();
         for (const theme of ['light', 'dark']) {
             await page.emulateMedia({ colorScheme: theme });
             await page.waitForFunction(value => document.documentElement.dataset.theme === value, theme);
             for (const width of [320, 390, 768, 1024, 1440]) {
                 await page.setViewportSize({ width, height: 844 });
                 assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `Landing overflows at ${width}px in ${theme}`);
+                const teacherTab = page.getByRole('tab', { name: 'I’m a teacher', exact: true });
+                await teacherTab.click();
+                await page.getByRole('heading', { name: 'Get ready to offer support.', exact: true }).waitFor();
+                assert.equal(await teacherTab.getAttribute('aria-selected'), 'true');
+                assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `Teacher hero overflows at ${width}px`);
+                await teacherTab.focus();
+                await page.keyboard.press('ArrowLeft');
+                await page.getByRole('heading', { name: 'Find the right teacher.', exact: true }).waitFor();
                 if (width < 1024) {
+                    assert.equal(await page.getByRole('navigation', { name: 'Main navigation', exact: true }).getByRole('link', { name: 'Register', exact: true }).count(), 0, 'Register belongs in the hero, not the navbar');
                     const button = page.getByRole('button', { name: 'Open navigation menu', exact: true });
                     await button.click();
                     await page.locator('#landing-mobile-menu').getByRole('link', { name: 'How to use', exact: true }).click();
@@ -35,9 +44,11 @@ async function run() {
             }
         }
         const question = page.locator('summary', { hasText: 'What do the booking statuses mean?' });
+        assert.ok(await page.locator('#home').getByRole('link', { name: 'Register →', exact: true }).isVisible());
         await question.click();
         assert.equal(await question.evaluate(element => element.parentElement.open), true);
         assert.equal(await page.getByRole('link', { name: 'Register as a student', exact: false }).getAttribute('href'), `${base}/register?role=student`);
+        await page.getByRole('tab', { name: 'I’m a teacher', exact: true }).click();
         assert.equal(await page.getByRole('link', { name: 'Register as a teacher', exact: false }).getAttribute('href'), `${base}/register?role=teacher`);
         const invalidAnchors = await page.locator('a[href^="#"]').evaluateAll(links => links.map(link => link.getAttribute('href')).filter(href => !document.getElementById(href.slice(1))));
         assert.deepEqual(invalidAnchors, []);

@@ -12,9 +12,16 @@
     let installed = isStandalone();
     let dismissedUntil = 0;
     let caching = false;
+    let checkingInstalled = false;
+    let detectionVersion = 0;
     const appType = () => /^\/admin(?:\/|$)/.test(location.pathname) ? 'admin' : 'portal';
     let currentApp = appType();
     const storageKey = key => `consultation-pwa-${currentApp === 'admin' ? 'admin-' : ''}${key}`;
+    function rememberInstalled() {
+        installed = true;
+        deferredPrompt = null;
+        try { localStorage.setItem(storageKey('installed'), 'true'); } catch (_) { /* Keep it for this visit. */ }
+    }
     function readPreferences() {
         installed = isStandalone();
         dismissedUntil = 0;
@@ -22,15 +29,47 @@
             dismissedUntil = Number(localStorage.getItem(storageKey('dismissed-until'))) || 0;
             installed = installed || localStorage.getItem(storageKey('installed')) === 'true';
         } catch (_) { /* Optional preferences. */ }
+        if (isStandalone()) rememberInstalled();
+    }
+    function detectInstalled() {
+        const version = ++detectionVersion;
+        if (typeof navigator.getInstalledRelatedApps !== 'function' || installed) {
+            checkingInstalled = false;
+            return;
+        }
+        checkingInstalled = true;
+        const app = currentApp;
+        Promise.resolve().then(() => navigator.getInstalledRelatedApps()).then(apps => {
+            if (version !== detectionVersion || currentApp !== app) return;
+            const manifestPath = app === 'admin' ? '/admin/manifest.webmanifest' : '/manifest.webmanifest';
+            const idPath = app === 'admin' ? '/admin/' : '/';
+            const matches = apps.some(related => {
+                if (related.platform !== 'webapp') return false;
+                return [['url', manifestPath], ['id', idPath]].some(([key, path]) => {
+                    if (!related[key]) return false;
+                    try {
+                        const url = new URL(related[key], location.origin);
+                        return url.origin === location.origin && url.pathname === path;
+                    } catch (_) { return false; }
+                });
+            });
+            if (matches) rememberInstalled();
+        }).catch(() => { /* Not supported or denied; use install events and saved state. */ }).finally(() => {
+            if (version !== detectionVersion) return;
+            checkingInstalled = false;
+            refresh();
+        });
     }
     function syncApp() {
         if (currentApp === appType()) return;
         currentApp = appType();
         deferredPrompt = null;
         readPreferences();
+        detectInstalled();
     }
     readPreferences();
-    const canSuggest = () => !caching && window.isSecureContext && 'serviceWorker' in navigator && isMobile() && !installed && !isStandalone() && Date.now() >= dismissedUntil && !document.querySelector('[data-portal-tour][data-tour-required="true"]');
+    detectInstalled();
+    const canSuggest = () => !caching && !checkingInstalled && window.isSecureContext && 'serviceWorker' in navigator && isMobile() && !installed && !isStandalone() && Date.now() >= dismissedUntil && !document.querySelector('[data-portal-tour][data-tour-required="true"]');
     function refresh() {
         syncApp();
         root.dataset.pwaStandalone = String(isStandalone());
@@ -48,6 +87,7 @@
         root.classList.toggle('pwa-install-open', !!document.querySelector('[data-pwa-install][open]'));
         document.querySelectorAll('[data-pwa-install-button]').forEach(button => {
             button.textContent = 'Install app';
+            button.hidden = installed || isStandalone();
         });
         document.querySelectorAll('[data-pwa-install-status]').forEach(status => {
             status.textContent = isIos()
@@ -71,6 +111,7 @@
             ? ['Open this page in Safari (not inside Facebook, Messenger, or another app).', 'Tap the Share button. If needed, open the browser menu to find Share.', 'Choose Add to Home Screen. You may need to scroll through the actions.', 'Keep Open as Web App enabled if shown, then tap Add. Open the new home-screen icon.']
             : ['Open the school’s HTTPS website in Chrome or Edge.', 'Tap Install app here when the browser offers installation, or open the browser menu.', 'Choose Install app or Add to Home screen, then confirm. Open the new app icon.'];
         const list = dialog.querySelector('[data-pwa-install-steps]');
+        dialog.querySelector('[data-pwa-install-confirm]').hidden = !isIos();
         list.replaceChildren(...items.map(text => {
             const item = document.createElement('li');
             item.textContent = text;
@@ -111,6 +152,8 @@
         syncApp();
         if (!isMobile() || isStandalone()) return;
         event.preventDefault();
+        detectionVersion++;
+        checkingInstalled = false;
         // The browser offering installation again is authoritative (for example,
         // after an uninstall), even if an earlier installation was remembered.
         installed = false;
@@ -119,12 +162,17 @@
         refresh();
     });
     window.addEventListener('appinstalled', () => {
-        installed = true;
-        try { localStorage.setItem(storageKey('installed'), 'true'); } catch (_) { /* Still hidden for this visit. */ }
-        deferredPrompt = null;
+        rememberInstalled();
+        document.querySelectorAll('[data-pwa-instructions][open]').forEach(dialog => dialog.close());
         refresh();
     });
-    standaloneMedia.addEventListener('change', () => { installed = isStandalone(); finishLoading(); refresh(); });
+    standaloneMedia.addEventListener('change', () => { if (isStandalone()) rememberInstalled(); finishLoading(); refresh(); });
+    window.addEventListener('storage', event => {
+        if (event.key === storageKey('installed') || event.key === storageKey('dismissed-until') || event.key === null) {
+            readPreferences();
+            refresh();
+        }
+    });
     document.addEventListener('cancel', event => {
         if (!event.target.matches('[data-pwa-install]')) return;
         event.preventDefault();
@@ -140,7 +188,7 @@
         }
         const button = event.target.closest('[data-pwa-install-button]');
         if (button) {
-            if (isStandalone()) return;
+            if (installed || isStandalone()) return;
             if (deferredPrompt) {
                 const prompt = deferredPrompt;
                 deferredPrompt = null;
@@ -151,13 +199,23 @@
                     // Invoke directly from this click: browsers require a user gesture.
                     await prompt.prompt();
                     const choice = await prompt.userChoice;
-                    if (choice.outcome === 'accepted') installed = true;
+                    if (choice.outcome === 'accepted') {
+                        installed = true;
+                        // appinstalled confirms success. Until then avoid nagging across navigation.
+                        dismissedUntil = Date.now() + 7 * 24 * 60 * 60 * 1000;
+                        try { localStorage.setItem(storageKey('dismissed-until'), String(dismissedUntil)); } catch (_) { /* Optional preference. */ }
+                    }
                     else dismissInstall();
                 } catch (_) { showInstructions(); }
                 finally { button.disabled = false; refresh(); }
             } else {
                 showInstructions();
             }
+        }
+        if (event.target.closest('[data-pwa-install-confirm]')) {
+            rememberInstalled();
+            event.target.closest('dialog').close();
+            refresh();
         }
         if (event.target.closest('[data-pwa-instructions-close]')) {
             event.target.closest('dialog').close();

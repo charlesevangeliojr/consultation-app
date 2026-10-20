@@ -22,6 +22,12 @@ For uploaded images missing on InfinityFree or other shared hosts, see
 [Shared-hosting image setup](docs/shared-hosting-images.md). It explains the
 symlink-free `/media` image route, hosted configuration, and transferring uploads.
 
+The public landing page includes canonical, Open Graph, and Twitter/X summary-card
+metadata with the configured name and a versioned 512px logo image. Changes are
+reflected in page metadata immediately, but social sites may cache previews.
+InfinityFree's JavaScript security challenge can prevent preview crawlers from
+reading either the page or image; metadata alone cannot bypass that host restriction.
+
 For sample accounts and a MySQL/MariaDB data snapshot, see
 [Demo credentials and SQL import](docs/demo-data.md).
 
@@ -133,11 +139,26 @@ priority over the install suggestion. Incomplete teachers see it on profile setu
 
 ### Install on a phone or tablet (PWA)
 
+The installed portal and Admin apps use the logo from **School settings**. The
+server creates padded PNG icons at 192/512px and an iPhone home-screen icon at
+180px without cropping the logo. PHP GD must be enabled; use a logo no larger than
+4 million pixels (a square 512px PNG is recommended). A missing, unreadable, or
+oversized logo falls back to the default icon. Replacing the logo changes icon
+URLs; existing installed apps may need removal and reinstallation to update the
+icon, particularly on iPhone. No database migration or storage symlink is needed.
+
 **Install app** uses the browser's native confirmation on supported Android
 browsers when an install prompt is available. iPhone/iPad use the numbered Safari
 Share → Add to Home Screen steps; iOS does not expose a direct install-prompt API.
 The landing-page footer also has **Install app**, so users can retry after
 dismissing the suggestion. A failed native prompt falls back to installation steps.
+Confirmed installations and standalone launches are remembered separately for the
+portal and Admin app, and supported browsers are queried for installed related web
+apps before showing the suggestion. iPhone Safari cannot reliably detect a prior
+home-screen installation from a normal tab; its instructions include **I’ve added
+the app** to suppress further suggestions in that browser. Clearing browser data
+can reset this preference. A new native install offer can override stale saved
+installation state after an uninstall.
 The manifest link includes `crossorigin="use-credentials"` for same-origin
 hosting security cookies (including InfinityFree's browser-check cookie).
 Without it, a host may return challenge HTML instead of the manifest JSON.

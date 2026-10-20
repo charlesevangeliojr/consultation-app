@@ -3,12 +3,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="A consultation system for one school. Learn how students register and book, teachers manage requests, and administrators maintain the school’s accounts and settings.">
+    @include('partials.social-metadata')
     <title>{{ $siteSettings->name ?: 'ConSync' }} — Your guide to school consultations</title>
     <link rel="icon" href="{{ $siteSettings->favicon_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($siteSettings->favicon_path) : asset('favicon.ico') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.12/dist/turbo.es2017-umd.js" defer></script>
     <script src="{{ asset('js/landing.js') }}" defer data-turbo-eval="false"></script>
+    <link rel="stylesheet" href="{{ asset('css/landing-hero.css') }}">
     <style>
         body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
         section[id] { scroll-margin-top: 100px; }
@@ -41,7 +42,6 @@
             </a>
             <div class="hidden shrink-0 items-center gap-4 lg:flex xl:gap-6">
                 @foreach($links as $id => $label)<a href="#{{ $id }}" class="focus-rose text-sm text-slate-300 hover:text-white">{{ $label }}</a>@endforeach
-                <a href="{{ route('register') }}" class="focus-rose rounded-lg border border-slate-700 px-4 py-2.5 text-sm font-semibold">Register</a>
                 <a href="{{ route('portal.login') }}" class="focus-rose rounded-lg bg-rose-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-400">Log in</a>
             </div>
             <div class="theme-navbar-actions">
@@ -52,36 +52,13 @@
         <div id="landing-mobile-menu" class="border-t border-slate-800 bg-slate-950 px-4 py-4 lg:hidden" hidden>
             <div class="mx-auto grid max-w-7xl gap-2">
                 @foreach($links as $id => $label)<a href="#{{ $id }}" class="rounded-lg px-3 py-3 text-sm text-slate-300 hover:bg-slate-900">{{ $label }}</a>@endforeach
-                <a href="{{ route('register') }}" class="rounded-lg border border-slate-700 px-3 py-3 text-center text-sm font-semibold">Register</a>
                 <a href="{{ route('portal.login') }}" class="rounded-lg bg-rose-500 px-3 py-3 text-center text-sm font-semibold text-white">Log in</a>
             </div>
         </div>
     </header>
 
     <main id="main">
-        <section id="home" class="hero-glow border-b border-slate-800">
-            <div class="mx-auto grid max-w-7xl items-center gap-12 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[1.15fr_.85fr]">
-                <div>
-                    <p class="inline-flex rounded-full border border-rose-400/20 bg-rose-400/5 px-3 py-2 text-xs font-medium text-rose-300">One school. One consultation system.</p>
-                    <h1 class="mt-6 text-4xl font-bold leading-tight tracking-tight sm:text-6xl">Need academic help?<br><span class="text-rose-400">Find a time to talk.</span></h1>
-                    <p class="mt-6 max-w-xl text-base leading-8 text-slate-400">A dedicated space for this school’s students, teachers, and administrators. Choose a teacher, request a consultation, and check the decision in your account. Teachers manage bookings; administrators manage this school’s settings and teacher scheduling permission.</p>
-                    <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-                        <a href="{{ route('portal.login') }}" class="focus-rose rounded-xl bg-rose-500 px-6 py-3.5 text-center text-sm font-semibold text-white hover:bg-rose-400">Log in to book →</a>
-                        <a href="#how-it-works" class="focus-rose rounded-xl border border-slate-700 bg-slate-900 px-6 py-3.5 text-center text-sm font-semibold">Show me how it works</a>
-                    </div>
-                    <p class="mt-6 text-xs leading-6 text-slate-400">All appointment times use <strong class="text-slate-200">Philippine Standard Time · Asia/Manila · UTC+8</strong>.</p>
-                </div>
-                <aside class="rounded-3xl border border-slate-700 bg-slate-900 p-6 shadow-2xl sm:p-8" aria-labelledby="start-heading">
-                    <p class="text-xs font-semibold uppercase tracking-widest text-rose-300">Start here</p>
-                    <h2 id="start-heading" class="mt-3 text-2xl font-bold">Which account do you use?</h2>
-                    <div class="mt-6 space-y-4">
-                        <div class="rounded-xl border border-slate-800 bg-slate-950 p-4"><h3 class="font-semibold">Student</h3><p class="mt-2 text-sm leading-6 text-slate-400">Log in with your <strong class="text-slate-200">12-digit LRN and password</strong>. Student email is not required at registration.</p><a href="{{ route('register', ['role' => 'student']) }}" class="focus-rose mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-rose-300">Register as a student →</a></div>
-                        <div class="rounded-xl border border-slate-800 bg-slate-950 p-4"><h3 class="font-semibold">Teacher</h3><p class="mt-2 text-sm leading-6 text-slate-400">Log in with your <strong class="text-slate-200">registered email and password</strong>. Complete your profile and get admin scheduling approval before publishing availability.</p><a href="{{ route('register', ['role' => 'teacher']) }}" class="focus-rose mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-rose-300">Register as a teacher →</a></div>
-                    </div>
-                    <p class="mt-5 text-xs leading-6 text-slate-400">Registration is for this school’s students and teachers. School administrator? Use <a href="{{ route('admin.login') }}" class="focus-rose font-semibold text-rose-300 underline underline-offset-4">Admin log in</a>. Public registration only offers Student and Teacher accounts.</p>
-                </aside>
-            </div>
-        </section>
+        @include('partials.landing-hero')
 
         <section id="how-it-works" class="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-24">
             <div class="max-w-2xl"><p class="text-xs font-semibold uppercase tracking-widest text-rose-300">For students</p><h2 class="mt-3 text-3xl font-bold sm:text-4xl">Your first consultation, step by step.</h2><p class="mt-4 leading-7 text-slate-400">Sending a request does not always mean it is confirmed. Here is what to do—and where to check next.</p></div>

@@ -33,6 +33,7 @@
     <h2 id="pwa-instructions-title">Add to your home screen</h2>
     <p data-pwa-instructions-text>Open your browser menu and choose Install app or Add to Home screen, if available.</p>
     <ol class="pwa-install-steps" data-pwa-install-steps></ol>
+    <button type="button" data-pwa-install-confirm hidden>I’ve added the app</button>
     <p>This installs a web app, not an APK. An internet connection is needed for accounts and consultations.</p>
     <button type="button" data-pwa-instructions-close>Got it</button>
 </dialog>

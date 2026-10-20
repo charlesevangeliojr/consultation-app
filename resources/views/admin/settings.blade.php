@@ -35,6 +35,7 @@
             <input id="logo" name="logo" type="file" accept="image/jpeg,image/png,image/webp,image/gif"
                 class="block w-full text-sm text-slate-300 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-700 file:px-4 file:py-2 file:font-medium file:text-white hover:file:bg-slate-600">
             <p class="mt-2 text-xs text-slate-500">PNG, JPG, WebP, or GIF. Maximum size: 2 MB.</p>
+            <p class="mt-2 text-xs leading-6 text-slate-400">Also used for the installed app icon on Android and iPhone, including the Admin app. A square logo of at least 512 × 512 pixels is recommended; keep it within 2000 × 2000 pixels for shared hosting. Already installed? Your device may require removing and reinstalling the app to update its icon.</p>
             @error('logo') <p class="mt-2 text-sm text-rose-300">{{ $message }}</p> @enderror
         </div>
 
