@@ -71,4 +71,15 @@ class LandingPageTest extends TestCase
         $response = $this->get('/')->assertOk()->assertDontSee('Preview location 13');
         $this->assertCount(12, $response->viewData('publicAvailability'));
     }
+
+    public function test_role_switcher_assets_are_versioned_so_old_hosted_scripts_are_not_reused(): void
+    {
+        $jsVersion = substr(hash_file('sha256', public_path('js/landing.js')), 0, 12);
+        $cssVersion = substr(hash_file('sha256', public_path('css/landing-hero.css')), 0, 12);
+        $this->get('/')->assertOk()
+            ->assertSee('js/landing.js?v='.$jsVersion, false)
+            ->assertSee('css/landing-hero.css?v='.$cssVersion, false)
+            ->assertSee('data-turbo-eval="false" data-turbo-track="reload"', false)
+            ->assertSee('aria-controls="hero-teacher-panel"', false);
+    }
 }

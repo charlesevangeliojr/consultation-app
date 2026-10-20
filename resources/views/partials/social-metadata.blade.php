@@ -1,7 +1,7 @@
 @php
     $socialName = $siteSettings->name ?: 'ConSync';
     $socialTitle = $socialName.' — School consultations';
-    $socialDescription = 'A single-school consultation app where students request time with teachers, teachers manage hours, and admins manage accounts, approvals, and school setup.';
+    $socialDescription = 'A consultation app where students request time with teachers, teachers set their hours, and admins manage accounts, scheduling approvals, and school setup.';
     $socialUrl = url('/');
     $socialImage = url(\App\Support\PwaIcons::url(512, $siteSettings->logo_path));
 @endphp

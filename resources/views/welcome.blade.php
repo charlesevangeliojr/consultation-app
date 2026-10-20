@@ -8,8 +8,12 @@
     <link rel="icon" href="{{ $siteSettings->favicon_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($siteSettings->favicon_path) : asset('favicon.ico') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@8.0.12/dist/turbo.es2017-umd.js" defer></script>
-    <script src="{{ asset('js/landing.js') }}" defer data-turbo-eval="false"></script>
-    <link rel="stylesheet" href="{{ asset('css/landing-hero.css') }}">
+    @php
+        $landingJsVersion = is_file(public_path('js/landing.js')) ? substr(hash_file('sha256', public_path('js/landing.js')), 0, 12) : 'hero-roles-v2';
+        $landingCssVersion = is_file(public_path('css/landing-hero.css')) ? substr(hash_file('sha256', public_path('css/landing-hero.css')), 0, 12) : 'hero-roles-v2';
+    @endphp
+    <script src="{{ asset('js/landing.js') }}?v={{ $landingJsVersion }}" defer data-turbo-eval="false" data-turbo-track="reload"></script>
+    <link rel="stylesheet" href="{{ asset('css/landing-hero.css') }}?v={{ $landingCssVersion }}" data-turbo-track="reload">
     <style>
         body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
         section[id] { scroll-margin-top: 100px; }
@@ -52,6 +56,7 @@
         <div id="landing-mobile-menu" class="border-t border-slate-800 bg-slate-950 px-4 py-4 lg:hidden" hidden>
             <div class="mx-auto grid max-w-7xl gap-2">
                 @foreach($links as $id => $label)<a href="#{{ $id }}" class="rounded-lg px-3 py-3 text-sm text-slate-300 hover:bg-slate-900">{{ $label }}</a>@endforeach
+                <a href="{{ route('register') }}" class="focus-rose rounded-lg border border-slate-700 px-3 py-3 text-center text-sm font-semibold">Register</a>
                 <a href="{{ route('portal.login') }}" class="rounded-lg bg-rose-500 px-3 py-3 text-center text-sm font-semibold text-white">Log in</a>
             </div>
         </div>

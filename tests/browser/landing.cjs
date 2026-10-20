@@ -9,6 +9,13 @@ async function run() {
         const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
         await page.addInitScript(() => localStorage.setItem('consultation-pwa-dismissed-until', String(Date.now() + 86400000)));
         const errors = [];
+        let staleScriptRequests = 0;
+        // Simulate an old deployment/browser-cache URL containing menu-only JS.
+        // The versioned script must bypass it and load the role-switcher handler.
+        await page.route(/\/js\/landing\.js$/, route => {
+            staleScriptRequests++;
+            return route.fulfill({ contentType: 'application/javascript', body: 'window.consultationLandingInitialized = true;' });
+        });
         page.on('pageerror', error => errors.push(error.message));
         await page.goto(base);
         await page.getByRole('heading', { name: 'Big questions. Let’s make time.' }).waitFor();
@@ -53,6 +60,8 @@ async function run() {
         const invalidAnchors = await page.locator('a[href^="#"]').evaluateAll(links => links.map(link => link.getAttribute('href')).filter(href => !document.getElementById(href.slice(1))));
         assert.deepEqual(invalidAnchors, []);
         assert.deepEqual(errors, []);
+        assert.equal(staleScriptRequests, 0, 'Landing must not reuse the stale, unversioned script URL');
+        assert.ok(await page.locator('script[src*="/js/landing.js?v="]').count());
         console.log('PASS landing: accurate role guides, public preview, working section links, registration CTAs, FAQ, mobile menu/Escape, and 320–1440px layout in both themes');
     } finally { await browser.close(); }
 }
