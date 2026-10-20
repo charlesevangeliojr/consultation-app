@@ -1,5 +1,12 @@
 # Uploaded images on InfinityFree / shared hosting
 
+For PWA installation, keep `crossorigin="use-credentials"` on the manifest link.
+InfinityFree's browser-check layer can return JavaScript challenge HTML instead
+of the manifest to requests without its security cookie. A manifest cannot run
+that JavaScript. The credentialed link allows the browser to send the same-origin
+cookie after the page's security check. This applies to both portal and admin
+manifests. It does not bypass security or require exposing any cookies in code.
+
 Uploaded logos, favicons, and profile photos live in `storage/app/public`.
 Normally Laravel exposes them through the `public/storage` symlink, but shared
 hosting can omit or block that link. This app also provides a PHP image route

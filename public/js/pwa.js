@@ -3,6 +3,7 @@
     window.consultationPwaInitialized = true;
     const standaloneMedia = matchMedia('(display-mode: standalone)');
     const isStandalone = () => standaloneMedia.matches || navigator.standalone === true;
+    const isIos = () => /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) || matchMedia('(pointer: coarse)').matches;
     const root = document.documentElement;
     root.dataset.pwaStandalone = String(isStandalone());
@@ -10,6 +11,7 @@
     let deferredPrompt = null;
     let installed = isStandalone();
     let dismissedUntil = 0;
+    let caching = false;
     const appType = () => /^\/admin(?:\/|$)/.test(location.pathname) ? 'admin' : 'portal';
     let currentApp = appType();
     const storageKey = key => `consultation-pwa-${currentApp === 'admin' ? 'admin-' : ''}${key}`;
@@ -28,7 +30,7 @@
         readPreferences();
     }
     readPreferences();
-    const canSuggest = () => window.isSecureContext && 'serviceWorker' in navigator && isMobile() && !installed && !isStandalone() && Date.now() >= dismissedUntil && !document.querySelector('[data-portal-tour][data-tour-required="true"]');
+    const canSuggest = () => !caching && window.isSecureContext && 'serviceWorker' in navigator && isMobile() && !installed && !isStandalone() && Date.now() >= dismissedUntil && !document.querySelector('[data-portal-tour][data-tour-required="true"]');
     function refresh() {
         syncApp();
         root.dataset.pwaStandalone = String(isStandalone());
@@ -47,6 +49,34 @@
         document.querySelectorAll('[data-pwa-install-button]').forEach(button => {
             button.textContent = 'Install app';
         });
+        document.querySelectorAll('[data-pwa-install-status]').forEach(status => {
+            status.textContent = isIos()
+                ? 'iPhone / iPad: installation uses Share → Add to Home Screen in Safari.'
+                : deferredPrompt
+                    ? 'Ready to install. Tap Install app, then confirm in your browser.'
+                    : 'If your browser does not offer a prompt, use its Install app or Add to Home screen menu.';
+        });
+    }
+    function showInstructions() {
+        const dialog = document.querySelector('[data-pwa-instructions]');
+        if (!dialog) return;
+        document.querySelectorAll('[data-pwa-install][open]').forEach(banner => banner.close());
+        root.classList.remove('pwa-install-open');
+        dialog.querySelector('[data-pwa-instructions-text]').textContent = !window.isSecureContext
+            ? 'Installation requires HTTPS. Open the secure HTTPS address for this school first.'
+            : isIos()
+                ? 'In Safari, tap Share, then Add to Home Screen, then Add. If you are using another browser or an in-app browser, open this site in Safari first.'
+                : 'Open this site in Chrome or Edge. In the browser menu, choose Install app or Add to Home screen, if available. If this is an in-app browser, open the site in your regular browser first.';
+        const items = isIos()
+            ? ['Open this page in Safari (not inside Facebook, Messenger, or another app).', 'Tap the Share button. If needed, open the browser menu to find Share.', 'Choose Add to Home Screen. You may need to scroll through the actions.', 'Keep Open as Web App enabled if shown, then tap Add. Open the new home-screen icon.']
+            : ['Open the school’s HTTPS website in Chrome or Edge.', 'Tap Install app here when the browser offers installation, or open the browser menu.', 'Choose Install app or Add to Home screen, then confirm. Open the new app icon.'];
+        const list = dialog.querySelector('[data-pwa-install-steps]');
+        list.replaceChildren(...items.map(text => {
+            const item = document.createElement('li');
+            item.textContent = text;
+            return item;
+        }));
+        if (!dialog.open) dialog.showModal();
     }
     function dismissInstall() {
         dismissedUntil = Date.now() + 7 * 24 * 60 * 60 * 1000;
@@ -68,9 +98,10 @@
     window.addEventListener('load', ready);
     window.addEventListener('pageshow', event => { if (event.persisted) finishLoading(); });
     document.addEventListener('DOMContentLoaded', ready);
-    document.addEventListener('turbo:load', refresh);
+    document.addEventListener('turbo:load', () => { caching = false; refresh(); });
     document.addEventListener('portal-tour:finished', refresh);
     document.addEventListener('turbo:before-cache', () => {
+        caching = true;
         finishLoading();
         document.querySelectorAll('[data-pwa-instructions][open]').forEach(dialog => dialog.close());
         document.querySelectorAll('[data-pwa-install][open]').forEach(dialog => { dialog.close(); dialog.hidden = true; });
@@ -109,30 +140,36 @@
         }
         const button = event.target.closest('[data-pwa-install-button]');
         if (button) {
+            if (isStandalone()) return;
             if (deferredPrompt) {
                 const prompt = deferredPrompt;
                 deferredPrompt = null;
                 button.disabled = true;
+                document.querySelectorAll('[data-pwa-install][open]').forEach(banner => banner.close());
+                root.classList.remove('pwa-install-open');
                 try {
+                    // Invoke directly from this click: browsers require a user gesture.
                     await prompt.prompt();
                     const choice = await prompt.userChoice;
                     if (choice.outcome === 'accepted') installed = true;
-                } catch (_) { /* Fall back to browser-specific instructions. */ }
+                    else dismissInstall();
+                } catch (_) { showInstructions(); }
                 finally { button.disabled = false; refresh(); }
             } else {
-                const dialog = document.querySelector('[data-pwa-instructions]');
-                if (!dialog) return;
-                const ios = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-                dialog.querySelector('[data-pwa-instructions-text]').textContent = ios
-                    ? 'In Safari, tap Share, then Add to Home Screen, then Add. If you are using another browser or an in-app browser, open this site in Safari first.'
-                    : 'Open this site in Chrome or Edge. In the browser menu, choose Install app or Add to Home screen, if available. If this is an in-app browser, open the site in your regular browser first.';
-                dialog.showModal();
+                showInstructions();
             }
         }
-        if (event.target.closest('[data-pwa-instructions-close]')) event.target.closest('dialog').close();
+        if (event.target.closest('[data-pwa-instructions-close]')) {
+            event.target.closest('dialog').close();
+            refresh();
+        }
     });
+    document.addEventListener('close', event => {
+        if (event.target.matches('[data-pwa-instructions]')) refresh();
+    }, true);
     if (window.isSecureContext && 'serviceWorker' in navigator) {
-        window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' }).catch(() => { /* The site still works without installation. */ }); });
+        // Register even if this script is loaded after window.load (for example via navigation).
+        navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' }).catch(() => { /* The site still works without installation. */ });
     }
     if (document.readyState !== 'loading') ready();
 })();

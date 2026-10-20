@@ -133,6 +133,15 @@ priority over the install suggestion. Incomplete teachers see it on profile setu
 
 ### Install on a phone or tablet (PWA)
 
+**Install app** uses the browser's native confirmation on supported Android
+browsers when an install prompt is available. iPhone/iPad use the numbered Safari
+Share → Add to Home Screen steps; iOS does not expose a direct install-prompt API.
+The landing-page footer also has **Install app**, so users can retry after
+dismissing the suggestion. A failed native prompt falls back to installation steps.
+The manifest link includes `crossorigin="use-credentials"` for same-origin
+hosting security cookies (including InfinityFree's browser-check cookie).
+Without it, a host may return challenge HTML instead of the manifest JSON.
+
 On a supported phone or tablet, the app shows a centered **Install app** popup
 with a dark backdrop. Dismiss it with the close button, Escape, or a backdrop tap.
 When the browser supports its own install prompt, the button opens it; otherwise,

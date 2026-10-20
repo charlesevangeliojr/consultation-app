@@ -37,7 +37,31 @@ async function run() {
         const dialog = page.locator('[data-pwa-instructions]');
         await dialog.waitFor();
         await dialog.getByText('Open this site in Chrome or Edge.', { exact: false }).waitFor();
+        assert.equal(await dialog.locator('[data-pwa-install-steps] li').count(), 3);
+        assert.equal(await banner.isVisible(), false, 'Instructions must not stack on the install modal');
         await page.keyboard.press('Escape');
+        // A rejected native prompt must show a usable fallback rather than silently fail.
+        await page.evaluate(() => {
+            const event = new Event('beforeinstallprompt', { cancelable: true });
+            event.prompt = async () => { throw new Error('Installation unavailable'); };
+            event.userChoice = Promise.resolve({ outcome: 'dismissed' });
+            dispatchEvent(event);
+        });
+        await banner.getByRole('button', { name: 'Install app', exact: true }).click();
+        await dialog.waitFor();
+        assert.equal(await banner.isVisible(), false);
+        await dialog.getByRole('button', { name: 'Got it', exact: true }).click();
+        await page.evaluate(() => {
+            const event = new Event('beforeinstallprompt', { cancelable: true });
+            event.prompt = async () => {};
+            event.userChoice = Promise.resolve({ outcome: 'dismissed' });
+            dispatchEvent(event);
+        });
+        await banner.getByRole('button', { name: 'Install app', exact: true }).click();
+        await page.waitForFunction(() => document.querySelector('[data-pwa-install]').hidden);
+        await page.evaluate(() => localStorage.removeItem('consultation-pwa-dismissed-until'));
+        await page.reload();
+        await banner.waitFor();
         // Simulate the browser-only install event to test the custom trigger.
         await page.evaluate(() => {
             const event = new Event('beforeinstallprompt', { cancelable: true });
@@ -68,6 +92,8 @@ async function run() {
         await ipad.goto(`${base}/portal/login`);
         await ipad.getByRole('button', { name: 'Install app', exact: true }).click();
         await ipad.locator('[data-pwa-instructions]').getByText('In Safari, tap Share,', { exact: false }).waitFor();
+        assert.equal(await ipad.locator('[data-pwa-install-steps] li').count(), 4);
+        await ipad.locator('[data-pwa-install-steps]').getByText('Keep Open as Web App enabled', { exact: false }).waitFor();
         await ipad.getByRole('button', { name: 'Got it' }).click();
         await ipad.getByRole('button', { name: 'Dismiss install suggestion' }).click();
         await ipad.reload();
@@ -120,6 +146,41 @@ async function run() {
         assert.equal(await adminPage.locator('[data-pwa-install]').isVisible(), false);
         await separateApps.close();
         console.log('PASS admin: separate manifest, Admin install name, and independent dismissal preferences');
+        const retry = await browser.newContext({ userAgent: android, isMobile: true, hasTouch: true, viewport: { width: 390, height: 844 } });
+        await retry.addInitScript(() => localStorage.setItem('consultation-pwa-dismissed-until', String(Date.now() + 86400000)));
+        const retryPage = await retry.newPage();
+        await retryPage.goto(base);
+        assert.equal(await retryPage.locator('[data-pwa-install]').isVisible(), false);
+        await retryPage.evaluate(() => {
+            const event = new Event('beforeinstallprompt', { cancelable: true });
+            event.prompt = async () => { window.retryPromptCalled = true; };
+            event.userChoice = Promise.resolve({ outcome: 'accepted' });
+            dispatchEvent(event);
+        });
+        await retryPage.getByRole('button', { name: 'Install app', exact: true }).click();
+        await retryPage.waitForFunction(() => window.retryPromptCalled);
+        await retry.close();
+        console.log('PASS install resilience: failed-prompt guidance, cancellation handling, numbered iOS steps, and landing-page retry after dismissal');
+        const protectedHost = await browser.newContext();
+        await protectedHost.addCookies([{ name: 'pwa-host-check', value: 'allowed', url: base }]);
+        const protectedPage = await protectedHost.newPage();
+        const cookieChecks = [];
+        await protectedPage.route('**/manifest.webmanifest', async route => {
+            const headers = await route.request().allHeaders();
+            const allowed = (headers.cookie || '').includes('pwa-host-check=allowed');
+            cookieChecks.push(allowed);
+            if (allowed) await route.continue();
+            else await route.fulfill({ contentType: 'text/html', body: '<html>Browser security check required</html>' });
+        });
+        await protectedPage.goto(`${base}/portal/login`);
+        const protocol = await protectedPage.context().newCDPSession(protectedPage);
+        const checkedManifest = await protocol.send('Page.getAppManifest');
+        assert.equal(await protectedPage.locator('link[rel="manifest"]').getAttribute('crossorigin'), 'use-credentials');
+        assert.ok(cookieChecks.length > 0 && cookieChecks.every(Boolean), 'Manifest requests must include same-origin hosting-security cookies');
+        assert.deepEqual(checkedManifest.errors, []);
+        assert.ok(JSON.parse(checkedManifest.data).name);
+        await protectedHost.close();
+        console.log('PASS shared-hosting install: real browser manifest requests include security cookies and parse without errors');
         await mobile.close();
         await ios.close();
         await standalone.close();

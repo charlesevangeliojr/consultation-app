@@ -30,6 +30,7 @@ class PwaTest extends TestCase
     {
         foreach (['/', '/portal/login', '/admin/login', '/register', '/register?role=student'] as $url) {
             $this->get($url)->assertOk()->assertSee('manifest.webmanifest')->assertSee('js/pwa.js')->assertSee('css/pwa.css')
+                ->assertSee('crossorigin="use-credentials"', false)
                 ->assertSee('data-pwa-install', false)->assertSee('data-pwa-launch', false)->assertSee('data-pwa-instructions', false);
             $this->get($url)->assertSee('Your familiar workspace')->assertSee('Not now')->assertSee('No APK download. Internet connection required.');
         }

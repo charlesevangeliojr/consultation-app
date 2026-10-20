@@ -25,12 +25,14 @@
             <button type="button" data-pwa-install-button>Install app</button>
             <button type="button" class="pwa-install-later" data-pwa-dismiss>Not now</button>
         </div>
+        <p class="pwa-install-status" data-pwa-install-status role="status"></p>
         <p class="pwa-install-footnote"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>No APK download. Internet connection required.</p>
     </div>
 </dialog>
 <dialog class="pwa-instructions" data-pwa-instructions aria-labelledby="pwa-instructions-title">
     <h2 id="pwa-instructions-title">Add to your home screen</h2>
     <p data-pwa-instructions-text>Open your browser menu and choose Install app or Add to Home screen, if available.</p>
+    <ol class="pwa-install-steps" data-pwa-install-steps></ol>
     <p>This installs a web app, not an APK. An internet connection is needed for accounts and consultations.</p>
     <button type="button" data-pwa-instructions-close>Got it</button>
 </dialog>

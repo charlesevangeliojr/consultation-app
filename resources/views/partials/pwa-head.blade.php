@@ -1,5 +1,5 @@
 @php($isAdminPwa = request()->is('admin', 'admin/*'))
-<link rel="manifest" href="{{ route($isAdminPwa ? 'pwa.admin-manifest' : 'pwa.manifest', [], false) }}" data-turbo-track="reload">
+<link rel="manifest" href="{{ route($isAdminPwa ? 'pwa.admin-manifest' : 'pwa.manifest', [], false) }}" crossorigin="use-credentials" data-turbo-track="reload">
 <link rel="apple-touch-icon" href="{{ asset('pwa/icon-192.png') }}">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">

@@ -31,6 +31,9 @@ html[data-theme="light"] .pwa-install-eyebrow { color: #be123c; }
 .pwa-install [data-pwa-install-button]:disabled { opacity: .6; cursor: wait; }
 .pwa-install-later { min-height: 44px; padding: 10px; border-radius: 10px; color: var(--theme-muted); font-size: 12px; cursor: pointer; }
 .pwa-install-later:hover { background: var(--theme-inset); color: var(--theme-text); }
+.pwa-install .pwa-install-status { margin-top: 10px; text-align: center; font-size: 11px; }
+.pwa-install-steps { margin: 16px 0; padding-left: 22px; list-style: decimal; color: var(--theme-text); font-size: 13px; line-height: 1.8; }
+.pwa-install-steps li + li { margin-top: 12px; }
 .pwa-install .pwa-install-footnote { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 12px; font-size: 10px; line-height: 1.6; text-align: center; }
 .pwa-install-footnote svg { flex-shrink: 0; }
 .pwa-dismiss { position: absolute; top: 10px; right: 10px; display: grid; width: 44px; height: 44px; place-items: center; border-radius: 50%; color: var(--theme-muted); background: transparent; cursor: pointer; }
