@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\SiteSetting;
+use App\Support\SchoolImage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -40,7 +41,7 @@ class SiteSettingsController extends Controller
 
         if ($request->hasFile('logo')) {
             $oldFiles[] = $settings->logo_path;
-            $settings->logo_path = $request->file('logo')->store('logos', 'public');
+            $settings->logo_path = SchoolImage::store($request->file('logo'), 'logos', 512);
         } elseif ($request->boolean('remove_logo')) {
             $oldFiles[] = $settings->logo_path;
             $settings->logo_path = null;
@@ -48,7 +49,7 @@ class SiteSettingsController extends Controller
 
         if ($request->hasFile('favicon')) {
             $oldFiles[] = $settings->favicon_path;
-            $settings->favicon_path = $request->file('favicon')->store('favicons', 'public');
+            $settings->favicon_path = SchoolImage::store($request->file('favicon'), 'favicons', 192);
         } elseif ($request->boolean('remove_favicon')) {
             $oldFiles[] = $settings->favicon_path;
             $settings->favicon_path = null;

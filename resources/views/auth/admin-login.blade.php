@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Admin login · {{ $siteSettings->name ?: config('app.name', 'Consultation') }}</title>
     @if($siteSettings->favicon_path)<link rel="icon" href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($siteSettings->favicon_path) }}">@endif
+    @include('partials.brand-preload')
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="{{ asset('js/password-visibility.js') }}" defer></script>
     @include('partials.theme-head')

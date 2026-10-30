@@ -59,6 +59,19 @@ class PwaIconTest extends TestCase
         $this->get('/pwa/school-icon-999.png')->assertNotFound();
     }
 
+    public function test_manifest_and_icons_revalidate_with_etags(): void
+    {
+        Storage::fake('public');
+        SiteSetting::current()->update(['logo_path' => $this->logo()]);
+
+        $manifest = $this->get('/manifest.webmanifest')->assertOk();
+        $etag = $manifest->headers->get('ETag');
+        $this->assertNotNull($etag);
+        $this->withHeader('If-None-Match', $etag)->get('/manifest.webmanifest')->assertStatus(304);
+
+        $this->get(PwaIcons::url(512, 'logos/school.png'))->assertOk()->assertHeader('Cache-Control', 'max-age=604800, public');
+    }
+
     public function test_missing_or_removed_logo_safely_falls_back_to_default_icons(): void
     {
         Storage::fake('public');

@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Register · {{ $siteSettings->name ?: 'ConSync' }}</title>
+    @include('partials.brand-preload')
     <script src="https://cdn.tailwindcss.com"></script>
     @include('partials.theme-head')
 </head>
@@ -13,7 +14,7 @@
     <main class="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-7 text-center shadow-2xl sm:p-9">
         <a href="{{ url('/') }}" class="mx-auto inline-flex items-center gap-3 rounded-lg text-xl font-bold tracking-tight text-white">
             @if ($siteSettings->logo_path)
-                <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($siteSettings->logo_path) }}" alt="" class="h-10 w-10 rounded-lg object-contain">
+                <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($siteSettings->logo_path) }}" alt="" width="40" height="40" fetchpriority="high" decoding="async" class="h-10 w-10 rounded-lg object-contain">
             @else
                 <span class="grid h-10 w-10 place-items-center rounded-xl bg-rose-500 text-white" aria-hidden="true">{{ mb_substr($siteSettings->name ?: 'C', 0, 1) }}</span>
             @endif

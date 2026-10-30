@@ -197,7 +197,8 @@ class ConsultationController extends Controller
             throw ValidationException::withMessages(['day' => 'Select a date in the displayed month.']);
         }
         $calendarAvailability = ConsultationAvailability::where('teacher_id', $user->id)->whereNull('cancelled_at')
-            ->whereBetween('date', [$month->toDateString(), $month->copy()->endOfMonth()->toDateString()])
+            ->whereDate('date', '>=', $month->toDateString())
+            ->whereDate('date', '<=', $month->copy()->endOfMonth()->toDateString())
             ->orderBy('date')->orderBy('starts_at')->get()->groupBy(fn ($period) => $period->date->toDateString());
         $calendarAppointments = ConsultationAppointment::where('teacher_id', $user->id)->whereNotIn('status', ['cancelled', 'rejected'])
             ->whereBetween('starts_at', [$month, $month->copy()->endOfMonth()])->with(['student', 'availability'])
