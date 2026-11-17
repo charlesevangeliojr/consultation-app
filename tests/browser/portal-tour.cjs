@@ -24,7 +24,7 @@ async function run() {
             await tour.waitFor({ state: 'visible' });
             assert.equal(await page.locator('[data-pwa-install]').isVisible(), false, 'First-login tour must take priority over install modal');
             assert.equal(await tour.evaluate(element => element.matches(':modal')), true);
-            const count = role === 'teacher' ? 5 : 4;
+            const count = 5;
             for (let step = 1; step <= count; step++) {
                 await tour.locator('[data-portal-tour-progress]').getByText(`Step ${step} of ${count}`, { exact: true }).waitFor();
                 if (step === 1) assert.equal(await tour.getByRole('button', { name: 'Back', exact: true }).isDisabled(), true);

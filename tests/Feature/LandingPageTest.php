@@ -94,7 +94,7 @@ class LandingPageTest extends TestCase
             ->assertSee('data-manual-device="mobile"', false);
 
         foreach ([
-            ['student', 4],
+            ['student', 5],
             ['teacher', 5],
             ['admin', 3],
         ] as [$role, $count]) {

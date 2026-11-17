@@ -42,8 +42,8 @@ class ConsultationController extends Controller
                 });
             },
         ];
-        if (! auth()->attempt($credentials)) {
-            return back()->withErrors(['login' => 'These credentials do not match our records.'])->onlyInput('login');
+        if (! auth()->attempt($credentials, $request->boolean('remember'))) {
+            return back()->withErrors(['login' => 'These credentials do not match our records.'])->onlyInput('login', 'remember');
         }
 
         $request->session()->regenerate();

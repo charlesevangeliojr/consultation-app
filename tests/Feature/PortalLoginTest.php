@@ -44,6 +44,30 @@ class PortalLoginTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    public function test_portal_and_admin_logins_support_remember_me(): void
+    {
+        $student = $this->student();
+        $this->get(route('portal.login'))->assertOk()->assertSee('Remember me')->assertSee('name="remember"', false);
+        $portalResponse = $this->post(route('portal.login.store'), [
+            'login' => '012345678901',
+            'password' => 'password123',
+            'remember' => '1',
+        ])->assertRedirect(route('consultations.home'));
+        $portalResponse->assertCookie(\Illuminate\Support\Facades\Auth::guard()->getRecallerName());
+        $this->assertNotNull($student->fresh()->remember_token);
+        $this->post(route('consultations.logout'));
+
+        $admin = User::factory()->superAdmin()->create(['email' => 'admin-remember@example.com', 'password' => 'password123']);
+        $this->get(route('admin.login'))->assertOk()->assertSee('Remember me')->assertSee('name="remember"', false);
+        $adminResponse = $this->post(route('admin.login.store'), [
+            'email' => 'admin-remember@example.com',
+            'password' => 'password123',
+            'remember' => '1',
+        ])->assertRedirect(route('admin.dashboard'));
+        $adminResponse->assertCookie(\Illuminate\Support\Facades\Auth::guard()->getRecallerName());
+        $this->assertNotNull($admin->fresh()->remember_token);
+    }
+
     private function student(): User
     {
         $role = Role::firstOrCreate(['name' => 'Student'], ['is_super_admin' => false]);

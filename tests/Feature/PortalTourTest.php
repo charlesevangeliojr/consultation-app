@@ -14,15 +14,16 @@ class PortalTourTest extends TestCase
     public function test_student_has_replay_button_and_student_only_tour_with_consultations_page(): void
     {
         $student = User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'Student'])->id]);
-        foreach (['consultations.dashboard', 'consultations.browse', 'consultations.student-consultations.index', 'consultations.student-profile.edit'] as $route) {
+        foreach (['consultations.dashboard', 'consultations.browse', 'consultations.student-consultations.index', 'consultations.student-profile.edit', 'consultations.student.settings'] as $route) {
             $response = $this->actingAs($student)->get(route($route))->assertOk()
                 ->assertSee('portal-tour.css')->assertSee('portal-tour.js')->assertSee('Start navigation tour')
                 ->assertSee('Student quick tour')->assertSee('Track your consultations')->assertDontSee('Teacher quick tour')
                 ->assertSee('consultation-tour-v1-student-'.$student->id);
             preg_match('/<script type="application\/json" data-portal-tour-steps>(.*?)<\/script>/s', $response->getContent(), $matches);
             $steps = json_decode($matches[1], true, flags: JSON_THROW_ON_ERROR);
-            $this->assertCount(4, $steps);
+            $this->assertCount(5, $steps);
             $this->assertSame(route('consultations.student-consultations.index'), $steps[2]['url']);
+            $this->assertSame(route('consultations.student.settings'), $steps[4]['url']);
             $response->assertSee('data-portal-tour-image', false)
                 ->assertSee('aria-label="Back"', false)
                 ->assertSee('aria-label="Next"', false)

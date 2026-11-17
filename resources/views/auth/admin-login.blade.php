@@ -33,6 +33,7 @@
                     class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-rose-400">
             </div>
             @include('auth.partials.login-password')
+            @include('auth.partials.login-remember')
             <button type="submit" class="w-full rounded-lg bg-rose-500 px-4 py-3 font-semibold transition hover:bg-rose-400">Sign in</button>
         </form>
         <a href="{{ url('/') }}" class="mt-6 inline-block text-sm text-slate-400 hover:text-white">← Back to home</a>

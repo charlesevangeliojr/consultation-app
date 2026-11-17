@@ -2,17 +2,17 @@
    Dark mode preserves the existing palette; light mode never filters images. */
 :root { color-scheme: dark; --theme-page: #020617; --theme-panel: #0f172a; --theme-inset: #1e293b; --theme-text: #f1f5f9; --theme-muted: #94a3b8; --theme-border: #334155; }
 html[data-theme="light"] { color-scheme: light; --theme-page: #f8fafc; --theme-panel: #ffffff; --theme-inset: #f1f5f9; --theme-text: #0f172a; --theme-muted: #475569; --theme-border: #cbd5e1; }
-.theme-toggle { display: inline-flex; min-height: 44px; min-width: 44px; flex-shrink: 0; align-items: center; justify-content: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--theme-border); border-radius: 10px; background: var(--theme-panel); color: var(--theme-text); font-size: 12px; font-weight: 600; cursor: pointer; }
+.theme-toggle { display: inline-flex; width: 44px; height: 44px; flex-shrink: 0; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--theme-border); border-radius: 12px; background: var(--theme-panel); color: var(--theme-text); cursor: pointer; }
 .theme-toggle:hover { background: var(--theme-inset); }
 .theme-toggle:focus-visible { outline: 3px solid #e11d48; outline-offset: 3px; }
 .theme-toggle svg { flex-shrink: 0; }
+.theme-toggle [data-theme-label] { display: none; }
 [data-theme-moon] { display: none; }
 html[data-theme="light"] [data-theme-sun] { display: none; }
 html[data-theme="light"] [data-theme-moon] { display: block; }
 .theme-navbar-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; margin-left: auto; }
 .theme-auth-navigation { position: absolute; inset: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) auto; display: flex; justify-content: flex-end; }
 body:has(> .theme-auth-navigation) { padding-top: 88px; }
-@media (max-width: 1279px) { .theme-toggle [data-theme-label] { display: none; } }
 @media (max-width: 479px) { .theme-navbar-actions { gap: 8px; } }
 /* Tailwind utilities used throughout server-rendered views. */
 html[data-theme="light"] body[class] { background-color: var(--theme-page) !important; color: var(--theme-text) !important; }
