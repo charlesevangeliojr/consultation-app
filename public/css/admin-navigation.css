@@ -56,13 +56,13 @@
 @media (max-width: 1023px) {
     .admin-topbar { min-height: 0; padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px)); }
     .admin-access-label { display: none; }
-    .admin-main { padding: 24px 20px; }
+    .admin-main { padding: 16px 20px; }
     .admin-workspace .mobile-navigation-label { font-size: clamp(8px, 2.1vw, 10px); }
 }
 @media (max-width: 479px) {
     .admin-topbar { gap: 8px; padding-inline: 12px; }
     .admin-topbar-heading { gap: 10px; }
-    .admin-main { padding: 24px 16px; }
+    .admin-main { padding: 14px 14px; }
     .admin-main .account-page-heading { flex-wrap: wrap; }
 }
 @media (max-height: 540px) {

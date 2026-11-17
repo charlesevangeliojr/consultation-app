@@ -39,7 +39,6 @@
             ]],
             ['label' => 'People & access', 'permission' => 'accounts', 'items' => [
                 ['label' => 'Accounts', 'icon' => 'users', 'route' => 'admin.accounts', 'pattern' => 'admin.accounts*', 'badge' => $pendingTeacherApprovalCount],
-                ['label' => 'Roles & permissions', 'icon' => 'shield', 'route' => 'admin.roles.index', 'pattern' => 'admin.roles.*'],
             ]],
             ['label' => 'Configuration', 'permission' => 'settings', 'items' => [
                 ['label' => 'Grades & sections', 'icon' => 'school', 'route' => 'admin.school', 'pattern' => 'admin.school*'],
@@ -51,7 +50,6 @@
         $mobileItems = [];
         foreach ($adminGroups as $group) {
             foreach ($group['items'] as $item) {
-                if ($item['route'] === 'admin.roles.index') continue;
                 $mobileItems[] = ['label' => match ($item['route']) {
                     'admin.school' => 'Grades & sections', 'admin.settings' => 'Settings', default => $item['label'],
                 }, 'icon' => $item['icon'], 'url' => route($item['route']), 'badge' => $item['badge'] ?? 0,
@@ -77,12 +75,6 @@
                     @include('partials.mobile-account-menu', ['mobileLogoutUrl' => route('admin.logout'), 'mobileProfileUrl' => route('admin.profile.edit')])
                 </div>
             </header>
-            @if(auth()->user()->canAccess('accounts', 'view') && request()->routeIs('admin.accounts*', 'admin.roles.*'))
-                <nav aria-label="People and access navigation" class="admin-section-tabs">
-                    <a href="{{ route('admin.accounts') }}" @if(request()->routeIs('admin.accounts*')) aria-current="page" @endif>Accounts</a>
-                    <a href="{{ route('admin.roles.index') }}" @if(request()->routeIs('admin.roles.*')) aria-current="page" @endif>Roles &amp; permissions</a>
-                </nav>
-            @endif
             <main class="admin-main" id="admin-workspace">@yield('content')</main>
         </div>
     </div>

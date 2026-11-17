@@ -46,3 +46,29 @@ html[data-theme="light"] .landing-hero h1 > span { color: #be123c; }
 @media (min-width: 640px) { .landing-hero-grid { padding: 64px 32px 72px; } .landing-hero-path { padding: 28px; } .landing-hero-eyebrow { font-size: 11px; } }
 @media (min-width: 1024px) { .landing-hero-grid { grid-template-columns: 1.08fr .92fr; gap: 64px; padding-top: 72px; padding-bottom: 88px; } }
 @media (max-width: 359px) { .landing-hero-actions a { width: 100%; } .landing-hero-path { padding: 16px; } .landing-hero h1 { font-size: 36px; } }
+.landing-manual-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.landing-manual-tabs, .landing-manual-device { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border: 1px solid var(--theme-border, #334155); border-radius: 12px; background: var(--theme-inset, #020617); }
+.landing-manual-tabs button, .landing-manual-device button { min-height: 40px; padding: 8px 14px; border-radius: 9px; color: var(--theme-muted, #94a3b8); font-size: 12px; font-weight: 600; }
+.landing-manual-tabs [aria-selected="true"], .landing-manual-device [aria-pressed="true"] { background: #be123c; color: #fff; }
+.landing-manual-card { display: flex; flex-direction: column; padding: 20px; border: 1px solid var(--theme-border, #1e293b); border-radius: 20px; background: var(--theme-panel, #0f172a); }
+.landing-manual-card-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.landing-manual-step-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; background: rgb(244 63 94 / 14%); color: #fda4af; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+html[data-theme="light"] .landing-manual-step-badge { color: #be123c; }
+.landing-manual-where { color: var(--theme-muted, #94a3b8); font-size: 11px; }
+.landing-manual-shot { margin-top: 16px; width: 100%; overflow: hidden; border: 1px solid var(--theme-border, #334155); border-radius: 14px; background: var(--theme-inset, #020617); padding: 10px; text-align: left; cursor: zoom-in; transition: border-color .15s ease; }
+.landing-manual-shot:hover { border-color: #fb7185; }
+.landing-manual-shot img { display: block; width: 100%; height: auto; max-height: 290px; border-radius: 8px; object-fit: cover; object-position: top; }
+.landing-manual-shot img[data-mode="mobile"] { width: auto; max-width: 100%; max-height: 310px; margin-inline: auto; border: 2px solid var(--theme-border, #334155); border-radius: 16px; object-fit: contain; }
+.landing-manual-shot-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding-inline: 2px; color: var(--theme-muted, #94a3b8); font-size: 11px; font-weight: 600; }
+.landing-manual-lightbox { box-sizing: border-box; width: min(920px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); margin: auto; padding: 20px; overflow-y: auto; border: 1px solid var(--theme-border, #334155); border-radius: 20px; background: var(--theme-panel, #0f172a); color: var(--theme-text, #f1f5f9); box-shadow: 0 24px 80px rgb(0 0 0 / 55%); }
+.landing-manual-lightbox::backdrop { background: rgb(2 6 23 / 80%); }
+.landing-manual-lightbox-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.landing-manual-lightbox-close { display: grid; width: 44px; height: 44px; place-items: center; border: 1px solid var(--theme-border, #334155); border-radius: 10px; color: var(--theme-text, #f1f5f9); font-size: 22px; }
+.landing-manual-lightbox-stage { margin-top: 14px; padding: 10px; border: 1px solid var(--theme-border, #334155); border-radius: 14px; background: var(--theme-inset, #020617); }
+.landing-manual-lightbox-stage img { display: block; width: 100%; height: auto; border-radius: 10px; }
+.landing-manual-lightbox-stage img[data-mode="mobile"] { width: auto; max-width: min(390px, 100%); margin-inline: auto; border: 2px solid var(--theme-border, #334155); border-radius: 18px; }
+@media (max-width: 639px) {
+    .landing-manual-tabs, .landing-manual-device { width: 100%; }
+    .landing-manual-tabs button, .landing-manual-device button { flex: 1; padding: 8px 10px; font-size: 11px; }
+    .landing-manual-card { padding: 16px; }
+}

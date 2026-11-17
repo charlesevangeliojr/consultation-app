@@ -1,25 +1,25 @@
 @extends('admin.layout')
 @section('title', 'Consultation monitoring')
 @section('content')
-<h2 class="text-3xl font-bold">Consultation monitoring</h2>
-<p class="mt-3 text-slate-400">Read-only booking records. Teachers control booking approval; administrators manage teacher permission through Accounts.</p>
-@if(session('status'))<p role="status" class="mt-5 rounded-lg border border-emerald-900 bg-emerald-950/50 p-4 text-sm text-emerald-200">{{ session('status') }}</p>@endif
+<h2 class="text-2xl font-bold sm:text-3xl">Consultation monitoring</h2>
+<p class="mt-1.5 text-sm text-slate-400 sm:mt-2">Read-only booking records. Teachers control booking approval; administrators manage teacher permission through Accounts.</p>
+@if(session('status'))<p role="status" class="mt-4 rounded-lg border border-emerald-900 bg-emerald-950/50 p-3 text-sm text-emerald-200 sm:mt-5 sm:p-4">{{ session('status') }}</p>@endif
 @include('admin.partials.consultation-calendar')
-<details class="mt-6"><summary class="min-h-11 cursor-pointer text-sm font-semibold text-slate-400">Teachers &amp; permission</summary><div class="mt-4 grid gap-3 sm:grid-cols-2">
+<details class="mt-5 sm:mt-6"><summary class="min-h-11 cursor-pointer text-sm font-semibold text-slate-400">Teachers &amp; permission</summary><div class="mt-4 grid gap-3 sm:grid-cols-2">
 @forelse($teachers as $teacher)<article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
     <p class="font-semibold">{{ $teacher->name }}</p>
     @include('admin.partials.teacher-approval', ['teacherAccount' => $teacher])
     @if(auth()->user()->canManage($teacher))<a href="{{ route('admin.accounts.edit', $teacher) }}" class="mt-3 inline-block text-sm text-rose-300">Edit profile / permission →</a>@endif
 </article>@empty<p class="text-slate-500">No teachers registered.</p>@endforelse
 </div></details>
-<section class="mt-10"><h3 class="text-xl font-semibold">Teacher availability</h3><div class="mt-4 grid gap-3 sm:grid-cols-2">
+<section class="mt-6 sm:mt-8"><h3 class="text-lg font-semibold sm:text-xl">Teacher availability</h3><div class="mt-3 grid gap-3 sm:mt-4 sm:grid-cols-2">
 @forelse($availability as $period)<article class="rounded-xl border border-slate-800 bg-slate-900 p-4">
     <p class="font-semibold">{{ $period->teacher->name }}</p><p class="mt-2 text-sm text-slate-300">{{ $period->date->format('M j, Y') }} · {{ \Illuminate\Support\Carbon::parse($period->starts_at)->format('g:i A') }}–{{ \Illuminate\Support\Carbon::parse($period->ends_at)->format('g:i A') }}</p>
     <p class="mt-2 text-xs text-slate-400">Student-selected time ranges · {{ $period->queued_count }} queued · {{ $period->cancelled_at ? 'Cancelled' : 'Published' }}</p>
     @if($period->location)<p class="mt-2 text-xs text-slate-500">{{ $period->location }}</p>@endif
 </article>@empty<p class="text-sm text-slate-500">No availability published for this date.</p>@endforelse
 </div><div class="mt-4">{{ $availability->withQueryString()->links() }}</div></section>
-<section class="mt-10" aria-labelledby="booking-records-heading">
+<section class="mt-6 sm:mt-8" aria-labelledby="booking-records-heading">
     <h3 id="booking-records-heading" class="text-xl font-semibold">Booking records</h3>
     <p class="mt-2 text-sm text-slate-400">Select a booking to view its full details. Times: {{ config('app.timezone') }}.</p>
     <div class="booking-records-table mt-4">

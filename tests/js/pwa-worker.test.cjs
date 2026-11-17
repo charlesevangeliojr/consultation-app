@@ -87,13 +87,32 @@ test('notification clicks reuse an existing same-origin window', async () => {
     const state = setup();
     const navigated = [];
     let focused = false;
-    state.windows.push({ url: 'https://school.example/consultations/dashboard', navigate: async url => { navigated.push(url); }, focus: async () => { focused = true; } });
+    const client = { url: 'https://school.example/consultations/dashboard', navigate: async url => { navigated.push(url); return client; }, focus: async () => { focused = true; } };
+    state.windows.push(client);
     let work;
     state.handlers.notificationclick({ notification: { close() {}, data: { url: '/consultations/teacher/requests' } }, waitUntil: promise => { work = promise; } });
     await work;
     assert.deepEqual(navigated, ['https://school.example/consultations/teacher/requests']);
     assert.equal(focused, true);
     assert.deepEqual(state.opened, []);
+});
+
+test('portal alerts do not navigate an open admin window', async () => {
+    const state = setup();
+    state.windows.push({ url: 'https://school.example/admin', navigate: async () => assert.fail('Admin window was reused'), focus: async () => assert.fail('Admin window was focused') });
+    let work;
+    state.handlers.notificationclick({ notification: { close() {}, data: { url: '/consultations/student/consultations' } }, waitUntil: promise => { work = promise; } });
+    await work;
+    assert.deepEqual(state.opened, ['https://school.example/consultations/student/consultations']);
+});
+
+test('admin alerts do not navigate an open portal window', async () => {
+    const state = setup();
+    state.windows.push({ url: 'https://school.example/consultations/dashboard', navigate: async () => assert.fail('Portal window was reused') });
+    let work;
+    state.handlers.notificationclick({ notification: { close() {}, data: { url: '/admin/accounts' } }, waitUntil: promise => { work = promise; } });
+    await work;
+    assert.deepEqual(state.opened, ['https://school.example/admin/accounts']);
 });
 
 test('push refreshes open inbox badges with a generic message only', async () => {

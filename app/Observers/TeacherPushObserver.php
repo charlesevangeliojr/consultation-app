@@ -22,10 +22,35 @@ class TeacherPushObserver
 
     public function updated(Teacher $teacher): void
     {
-        if ($teacher->wasChanged('consultation_approved')) {
-            BrowserPush::notify($teacher->user_id, $teacher->consultation_approved
-                ? 'Your scheduling permission was approved. Complete your profile to publish availability.'
-                : 'Your scheduling permission was revoked. Open your account for more information.', '/consultations/teacher/profile');
+        if (! $teacher->wasChanged('consultation_approved')) {
+            return;
         }
+
+        if ($teacher->consultation_approved) {
+            if ($teacher->hasCompleteProfile()) {
+                BrowserPush::notify(
+                    $teacher->user_id,
+                    'Your scheduling permission was approved. You can now publish availability.',
+                    '/consultations/teacher/availability',
+                    'Scheduling permission update'
+                );
+            } else {
+                BrowserPush::notify(
+                    $teacher->user_id,
+                    'Your scheduling permission was approved. Complete your profile to publish availability.',
+                    '/consultations/teacher/profile',
+                    'Scheduling permission update'
+                );
+            }
+
+            return;
+        }
+
+        BrowserPush::notify(
+            $teacher->user_id,
+            'Your scheduling permission was revoked. Contact an administrator if you need access restored.',
+            '',
+            'Scheduling permission update'
+        );
     }
 }

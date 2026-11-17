@@ -26,9 +26,11 @@ class AdminNavigationTest extends TestCase
                 $this->assertSame(['Overview', 'People & access', 'Configuration'], array_map(fn ($node) => trim($node->textContent), iterator_to_array($headings)));
                 $active = $xpath->query($navigation.'//a[@aria-current="page"]');
                 $this->assertCount(1, $active);
-                $this->assertSame(route($route), $active->item(0)->getAttribute('href'));
+                $this->assertSame(route($route === 'admin.roles.index' ? 'admin.accounts' : $route), $active->item(0)->getAttribute('href'));
+                $this->assertCount(0, $xpath->query($navigation.'//a[@href="'.route('admin.roles.index').'"]'));
             }
             $this->assertCount(5, $xpath->query('//nav[@aria-label="Admin mobile navigation"]//a'));
+            $this->assertCount(0, $xpath->query('//nav[@aria-label="Admin mobile navigation"]//a[@href="'.route('admin.roles.index').'"]'));
             $this->assertCount(1, $xpath->query('//nav[@aria-label="Admin mobile navigation"]//a[@aria-current="page"]'));
         }
     }
@@ -41,7 +43,7 @@ class AdminNavigationTest extends TestCase
         $xpath = $this->xpath($html);
         foreach (['Admin navigation'] as $label) {
             $links = $xpath->query('//nav[@aria-label="'.$label.'"]//a');
-            $this->assertSame([route('admin.accounts'), route('admin.roles.index')], array_map(fn ($node) => $node->getAttribute('href'), iterator_to_array($links)));
+            $this->assertSame([route('admin.accounts')], array_map(fn ($node) => $node->getAttribute('href'), iterator_to_array($links)));
         }
         $this->assertSame(route('admin.accounts'), $xpath->query('//aside//a[contains(@class,"admin-brand")]')->item(0)->getAttribute('href'));
         $this->assertCount(1, $xpath->query('//nav[@aria-label="Admin mobile navigation"]//a'));

@@ -20,14 +20,14 @@ class BrowserPush
             && Schema::hasTable('push_subscriptions');
     }
 
-    public static function notify(int $userId, string $body, string $url): void
+    public static function notify(int $userId, string $body, string $url = '', ?string $title = null): void
     {
         // Store the inbox event in the booking transaction, even if push is off.
         // Gracefully tolerate code deployment before the hosted migration runs.
         if (Schema::hasTable('account_notifications')) {
-            $title = match ($url) {
+            $title ??= match ($url) {
                 '/admin/accounts' => 'Teacher scheduling approval',
-                '/consultations/teacher/profile' => 'Scheduling permission update',
+                '/consultations/teacher/profile', '/consultations/teacher/availability' => 'Scheduling permission update',
                 default => 'Consultation update',
             };
             AccountNotification::create(['user_id' => $userId, 'title' => $title, 'body' => $body, 'url' => $url]);
@@ -52,7 +52,7 @@ class BrowserPush
         $payload = [
             'title' => $settings->name ?: 'Consultation update',
             'body' => $body,
-            'url' => $url,
+            'url' => $url ?: '/notifications',
             'icon' => PwaIcons::url(192, $settings->logo_path),
         ];
         $sent = false;

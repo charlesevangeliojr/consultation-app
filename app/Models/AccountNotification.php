@@ -13,11 +13,39 @@ class AccountNotification extends Model
         return ['user_id' => 'integer', 'read_at' => 'datetime'];
     }
 
-    public function destination(): string
+    public function destination(User $user): string
     {
-        return in_array($this->url, [
-            '/consultations', '/consultations/teacher/requests', '/consultations/student/consultations',
-            '/consultations/teacher/profile', '/admin', '/admin/accounts',
-        ], true) ? $this->url : '/notifications';
+        $allowed = [];
+        if ($user->isStudent()) {
+            array_push($allowed, '/consultations', '/consultations/dashboard', '/consultations/browse', '/consultations/student/consultations', '/consultations/student/profile');
+        }
+        if ($user->isTeacher()) {
+            array_push($allowed, '/consultations', '/consultations/teacher', '/consultations/teacher/requests', '/consultations/teacher/availability', '/consultations/teacher/settings', '/consultations/teacher/profile');
+        }
+        if ($user->hasAdminAccess()) {
+            if ($user->canAccess('dashboard', 'view')) {
+                array_push($allowed, '/admin', '/admin/consultations');
+            }
+            if ($user->canAccess('accounts', 'view')) {
+                $allowed[] = '/admin/accounts';
+            }
+            if ($user->canAccess('settings', 'view')) {
+                array_push($allowed, '/admin/settings', '/admin/school');
+            }
+        }
+
+        $target = $this->url;
+        if ($user->isTeacher() && $this->title === 'Scheduling permission update' && $target === '/consultations/teacher/profile') {
+            if ($user->teacher?->consultation_approved && $user->teacher?->hasCompleteProfile()) {
+                $target = '/consultations/teacher/availability';
+            }
+        }
+
+        return in_array($target, $allowed, true) ? $target : '/notifications';
+    }
+
+    public function hasDestination(User $user): bool
+    {
+        return $this->destination($user) !== '/notifications';
     }
 }

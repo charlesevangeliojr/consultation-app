@@ -82,4 +82,28 @@ class LandingPageTest extends TestCase
             ->assertSee('data-turbo-eval="false" data-turbo-track="reload"', false)
             ->assertSee('aria-controls="hero-teacher-panel"', false);
     }
+
+    public function test_landing_page_includes_visual_user_manual_with_desktop_and_mobile_screenshots(): void
+    {
+        $response = $this->get('/')->assertOk()
+            ->assertSee('Visual user manual')
+            ->assertSee('Student manual')
+            ->assertSee('Teacher manual')
+            ->assertSee('Admin manual')
+            ->assertSee('data-manual-device="desktop"', false)
+            ->assertSee('data-manual-device="mobile"', false);
+
+        foreach ([
+            ['student', 4],
+            ['teacher', 5],
+            ['admin', 3],
+        ] as [$role, $count]) {
+            for ($step = 1; $step <= $count; $step++) {
+                $response->assertSee("images/tour/{$role}-step-{$step}-desktop.png", false)
+                    ->assertSee("images/tour/{$role}-step-{$step}-mobile.png", false);
+                $this->assertFileExists(public_path("images/tour/{$role}-step-{$step}-desktop.png"));
+                $this->assertFileExists(public_path("images/tour/{$role}-step-{$step}-mobile.png"));
+            }
+        }
+    }
 }

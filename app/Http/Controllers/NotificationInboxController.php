@@ -40,7 +40,7 @@ class NotificationInboxController extends Controller
         abort_unless(Schema::hasTable('account_notifications'), 503, 'Notification database setup is missing. Run migrations.');
         $notification = AccountNotification::where('user_id', $request->user()->id)->findOrFail($id);
         if (!$notification->read_at) $notification->update(['read_at' => now()]);
-        return redirect($notification->destination());
+        return redirect($notification->destination($request->user()));
     }
 
     public function readAll(Request $request): RedirectResponse|JsonResponse

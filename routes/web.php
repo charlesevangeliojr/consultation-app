@@ -42,6 +42,7 @@ Route::post('/account/activity', fn () => response()->noContent())->middleware([
 Route::middleware('auth')->prefix('notifications')->name('notifications.')->group(function () {
     Route::get('/', [\App\Http\Controllers\NotificationInboxController::class, 'index'])->name('index');
     Route::get('/settings', [\App\Http\Controllers\PushSubscriptionController::class, 'index'])->name('settings');
+    Route::put('/reminder', [\App\Http\Controllers\PushSubscriptionController::class, 'updateReminder'])->name('reminder.update');
     Route::get('/summary', [\App\Http\Controllers\NotificationInboxController::class, 'summary'])->middleware('throttle:notification-summary')->name('summary');
     Route::post('/read-all', [\App\Http\Controllers\NotificationInboxController::class, 'readAll'])->name('read-all');
     Route::post('/{id}/read', [\App\Http\Controllers\NotificationInboxController::class, 'read'])->whereNumber('id')->name('read');
@@ -63,6 +64,8 @@ Route::middleware(['auth', \App\Http\Middleware\RefreshProposedConsultationReque
     Route::get('/browse', [ConsultationController::class, 'browse'])->name('browse');
     Route::get('/student/profile', [StudentProfileController::class, 'edit'])->name('student-profile.edit');
     Route::put('/student/profile', [StudentProfileController::class, 'update'])->name('student-profile.update');
+    Route::get('/student/settings', [\App\Http\Controllers\AccountSettingsController::class, 'student'])->name('student.settings');
+    Route::put('/settings/password', [\App\Http\Controllers\AccountSettingsController::class, 'updatePassword'])->name('settings.password');
     Route::post('/availability/{availability}/book', [ConsultationController::class, 'book'])->name('book');
     Route::post('/teachers/{teacher}/request-time', [ConsultationController::class, 'requestTime'])->name('request-time');
     Route::get('/teacher', [ConsultationController::class, 'teacher'])->name('teacher');

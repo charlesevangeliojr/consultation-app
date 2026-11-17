@@ -88,10 +88,10 @@
 .profile-school-help { margin: 0 20px 20px; }
 .profile-save-bar { position: sticky; bottom: var(--mobile-navigation-clearance, 104px); z-index: 16; display: flex; flex-direction: column; gap: 12px; padding: 14px; border: 1px solid #42516a; border-radius: 14px; background: rgb(17 28 47 / 97%); box-shadow: 0 8px 32px rgb(0 0 0 / 25%); backdrop-filter: blur(12px); }
 .profile-save-bar p { font-size: 12px; line-height: 1.7; color: #cbd5e1; }
-.profile-save-bar .profile-save-state { display: flex; align-items: flex-start; gap: 8px; }
-.profile-save-state strong { font-size: 11px; font-weight: 500; }
-.profile-save-state small { display: none; margin-top: 2px; font-size: 10px; color: #94a3b8; }
-.profile-save-dot { width: 6px; height: 6px; flex-shrink: 0; margin-top: 7px; border-radius: 50%; background: #6ee7b7; }
+.profile-save-bar .profile-save-state { display: flex; align-items: center; gap: 8px; }
+.profile-save-state strong { display: block; font-size: 11px; font-weight: 500; line-height: 1.4; }
+.profile-save-state small { display: none; margin-top: 2px; font-size: 10px; line-height: 1.4; color: #94a3b8; }
+.profile-save-dot { width: 6px; height: 6px; flex-shrink: 0; margin-top: 0; border-radius: 50%; background: #6ee7b7; }
 .profile-save-bar[data-dirty="true"] .profile-save-dot { background: #fbbf24; }
 .profile-save-bar button { display: flex; min-height: 48px; align-items: center; justify-content: center; gap: 16px; padding: 12px 20px; border-radius: 10px; background: #f43f5e; color: white; font-size: 13px; font-weight: 600; white-space: nowrap; }
 .profile-save-bar button:hover { background: #fb7185; }
@@ -143,6 +143,7 @@
     .teacher-profile-page .profile-save-bar { flex-direction: row; align-items: center; justify-content: flex-end; gap: 8px; padding: 8px; }
     .teacher-profile-page .profile-save-bar .profile-save-state { display: flex; flex: 1; min-width: 0; align-items: center; gap: 6px; }
     .teacher-profile-page .profile-save-state strong { display: block; font-size: 10px; line-height: 1.4; }
+    .teacher-profile-page .profile-save-dot { margin-top: 0; }
     .teacher-profile-page .profile-save-bar button { min-height: 44px; gap: 8px; padding: 10px 14px; font-size: 12px; }
     /* Keep the save action in the document, not over the keyboard's reduced viewport. */
     .teacher-profile-page form:has(input:focus, textarea:focus, select:focus) .profile-save-bar { position: static; }
@@ -158,6 +159,8 @@
     .profile-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 24px; }
     .profile-field-wide { grid-column: 1 / -1; }
     .profile-save-bar { flex-direction: row; align-items: center; justify-content: space-between; }
+    .profile-save-bar .profile-save-state { align-items: flex-start; }
+    .profile-save-dot { margin-top: 5px; }
     .profile-save-state small { display: block; }
 }
 @container (min-width: 860px) {

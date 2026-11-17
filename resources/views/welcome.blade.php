@@ -28,7 +28,7 @@
     @include('partials.pwa-ui')
     @php
         $appName = $siteSettings->name ?: 'ConSync';
-        $links = ['how-it-works' => 'How to use', 'features' => 'Features', 'calendar' => 'Public preview', 'faq' => 'Questions'];
+        $links = ['how-it-works' => 'How to use', 'user-manual' => 'User manual', 'features' => 'Features', 'calendar' => 'Public preview', 'faq' => 'Questions'];
         $monthStart = now()->startOfMonth();
         $monthOffset = $monthStart->dayOfWeekIso - 1;
         $calendarCells = (int) ceil(($monthOffset + $monthStart->daysInMonth) / 7) * 7;
@@ -82,6 +82,8 @@
             </ol>
             <aside class="mt-6 rounded-2xl border border-rose-400/20 bg-rose-400/5 p-6" aria-labelledby="proposed-heading"><h3 id="proposed-heading" class="font-semibold">No suitable published time?</h3><p class="mt-3 text-sm leading-7 text-slate-400">In Calendar, select a teacher and use <strong class="text-slate-200">Request another time</strong>. Propose a future date and start/end time within the teacher’s duration limit, and add a reason—even if no availability is published. The teacher must accept before the start time. Proposed requests are automatically rejected if unanswered when the start arrives, or if an accepted consultation takes the same teacher’s time.</p></aside>
         </section>
+
+        @include('partials.landing-manual')
 
         <section id="about" class="border-y border-slate-800 bg-slate-900/30 py-20 sm:py-24">
             <div class="mx-auto max-w-7xl px-5 sm:px-8">
@@ -170,7 +172,7 @@
         </section>
     </main>
     <footer class="border-t border-slate-800 bg-slate-950">
-        <div class="mx-auto flex max-w-7xl flex-col justify-between gap-6 px-5 py-10 sm:px-8 md:flex-row"><div><p class="font-bold">{{ $appName }}</p><p class="mt-2 max-w-md text-xs leading-6 text-slate-400">A single-school consultation system for this school’s students, teachers, and authorized administrators.</p><p class="mt-3 text-xs text-slate-500">© {{ now()->year }} {{ $appName }} · Philippine Standard Time</p><button type="button" data-pwa-install-button class="focus-rose mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-rose-300">Install app</button></div><nav aria-label="Footer navigation" class="flex flex-wrap items-start gap-x-5 gap-y-3 text-sm text-slate-400"><a href="#how-it-works" class="focus-rose">How to use</a><a href="#about" class="focus-rose">Teacher &amp; admin guide</a><a href="#faq" class="focus-rose">Questions</a><a href="{{ route('admin.login') }}" class="focus-rose">Admin log in</a></nav></div>
+        <div class="mx-auto flex max-w-7xl flex-col justify-between gap-6 px-5 py-10 sm:px-8 md:flex-row"><div><p class="font-bold">{{ $appName }}</p><p class="mt-2 max-w-md text-xs leading-6 text-slate-400">A single-school consultation system for this school’s students, teachers, and authorized administrators.</p><p class="mt-3 text-xs text-slate-500">© {{ now()->year }} {{ $appName }} · Philippine Standard Time</p><button type="button" data-pwa-install-button class="focus-rose mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-rose-300">Install app</button></div><nav aria-label="Footer navigation" class="flex flex-wrap items-start gap-x-5 gap-y-3 text-sm text-slate-400"><a href="#how-it-works" class="focus-rose">How to use</a><a href="#user-manual" class="focus-rose">User manual</a><a href="#about" class="focus-rose">Teacher &amp; admin guide</a><a href="#faq" class="focus-rose">Questions</a><a href="{{ route('admin.login') }}" class="focus-rose">Admin log in</a></nav></div>
     </footer>
 </body>
 </html>

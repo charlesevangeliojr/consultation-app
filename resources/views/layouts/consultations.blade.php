@@ -19,8 +19,8 @@
     <script src="{{ asset('js/mobile-account-menu.js') }}" defer data-turbo-eval="false"></script>
     <script src="{{ asset('js/calendar-schedule-modal.js') }}" defer data-turbo-eval="false"></script>
     @if(auth()->user()->isTeacher() || auth()->user()->isStudent())
-        <link rel="stylesheet" href="{{ asset('css/portal-tour.css') }}">
-        <script src="{{ asset('js/portal-tour.js') }}" defer data-turbo-eval="false"></script>
+        <link rel="stylesheet" href="{{ asset('css/portal-tour.css') }}?v=4">
+        <script src="{{ asset('js/portal-tour.js') }}?v=4" defer data-turbo-eval="false"></script>
         <link rel="stylesheet" href="{{ asset('css/teacher-calendar.css') }}">
         <script src="{{ asset('js/teacher-account-menu.js') }}" defer data-turbo-eval="false"></script>
         <script src="{{ asset('js/profile-photo-cropper.js') }}" defer data-turbo-eval="false"></script>
@@ -52,6 +52,7 @@
                 ['label' => 'Dashboard', 'icon' => 'home', 'url' => route('consultations.dashboard'), 'active' => request()->routeIs('consultations.dashboard')],
                 ['label' => 'Calendar', 'icon' => 'calendar', 'url' => route('consultations.browse'), 'active' => request()->routeIs('consultations.browse')],
                 ['label' => 'Consultations', 'icon' => 'users', 'url' => route('consultations.student-consultations.index'), 'active' => request()->routeIs('consultations.student-consultations.*')],
+                ['label' => 'Settings', 'icon' => 'settings', 'url' => route('consultations.student.settings'), 'active' => request()->routeIs('consultations.student.settings*')],
                 ['label' => 'My profile', 'icon' => 'profile', 'url' => route('consultations.student-profile.edit'), 'active' => request()->routeIs('consultations.student-profile.*')],
             ];
         } elseif (auth()->user()->isTeacher()) {

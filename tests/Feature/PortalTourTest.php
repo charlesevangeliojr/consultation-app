@@ -23,6 +23,19 @@ class PortalTourTest extends TestCase
             $steps = json_decode($matches[1], true, flags: JSON_THROW_ON_ERROR);
             $this->assertCount(4, $steps);
             $this->assertSame(route('consultations.student-consultations.index'), $steps[2]['url']);
+            $response->assertSee('data-portal-tour-image', false)
+                ->assertSee('aria-label="Back"', false)
+                ->assertSee('aria-label="Next"', false)
+                ->assertDontSee('data-portal-tour-mode', false)
+                ->assertDontSee('data-portal-tour-page', false);
+            foreach ($steps as $index => $step) {
+                $stepNumber = $index + 1;
+                $this->assertNotEmpty($step['imageAlt']);
+                $this->assertStringEndsWith("/images/tour/student-step-{$stepNumber}-desktop.png", $step['desktopImage']);
+                $this->assertStringEndsWith("/images/tour/student-step-{$stepNumber}-mobile.png", $step['mobileImage']);
+                $this->assertFileExists(public_path("images/tour/student-step-{$stepNumber}-desktop.png"));
+                $this->assertFileExists(public_path("images/tour/student-step-{$stepNumber}-mobile.png"));
+            }
         }
     }
 
@@ -37,6 +50,19 @@ class PortalTourTest extends TestCase
         $steps = json_decode($matches[1], true, flags: JSON_THROW_ON_ERROR);
         $this->assertCount(5, $steps);
         $this->assertSame(route('consultations.teacher-profile.edit'), $steps[0]['url']);
+        $response->assertSee('data-portal-tour-image', false)
+            ->assertSee('aria-label="Back"', false)
+            ->assertSee('aria-label="Next"', false)
+            ->assertDontSee('data-portal-tour-mode', false)
+            ->assertDontSee('data-portal-tour-page', false);
+        foreach ($steps as $index => $step) {
+            $stepNumber = $index + 1;
+            $this->assertNotEmpty($step['imageAlt']);
+            $this->assertStringEndsWith("/images/tour/teacher-step-{$stepNumber}-desktop.png", $step['desktopImage']);
+            $this->assertStringEndsWith("/images/tour/teacher-step-{$stepNumber}-mobile.png", $step['mobileImage']);
+            $this->assertFileExists(public_path("images/tour/teacher-step-{$stepNumber}-desktop.png"));
+            $this->assertFileExists(public_path("images/tour/teacher-step-{$stepNumber}-mobile.png"));
+        }
     }
 
     public function test_admin_and_public_pages_do_not_show_portal_tour(): void

@@ -3,22 +3,56 @@
 namespace App\Http\Controllers;
 
 use App\Models\PushSubscription;
+use App\Models\User;
 use App\Support\BrowserPush;
 use App\Support\PushEndpoint;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class PushSubscriptionController extends Controller
 {
+    public static function studentReminderState(User $user): array
+    {
+        $remindersReady = Schema::hasTable('student_reminder_settings') && Schema::hasTable('consultation_reminders');
+        $reminderMinutes = $user->isStudent() && $remindersReady
+            ? DB::table('student_reminder_settings')->where('user_id', $user->id)->value('minutes_before') : null;
+
+        return compact('remindersReady', 'reminderMinutes');
+    }
+
     public function index(Request $request): View
     {
         $user = $request->user();
         abort_unless($user->isTeacher() || $user->isStudent() || $user->hasAdminAccess(), 403);
-        return view('notification-settings', ['notificationLayout' => $user->isTeacher() || $user->isStudent() ? 'layouts.consultations' : 'admin.layout']);
+        $state = self::studentReminderState($user);
+
+        return view('notification-settings', [
+            'notificationLayout' => $user->isTeacher() || $user->isStudent() ? 'layouts.consultations' : 'admin.layout',
+            'remindersReady' => $state['remindersReady'],
+            'reminderMinutes' => $state['reminderMinutes'],
+        ]);
+    }
+
+    public function updateReminder(Request $request): RedirectResponse
+    {
+        abort_unless($request->user()->isStudent(), 403);
+        abort_unless(Schema::hasTable('student_reminder_settings') && Schema::hasTable('consultation_reminders'), 503, 'Reminder database setup is missing. Run migrations.');
+        $data = $request->validate([
+            'minutes_before' => ['nullable', 'integer', 'min:1', 'max:1440'],
+            'return_to' => ['nullable', Rule::in(['notifications.settings', 'consultations.student.settings'])],
+        ]);
+        DB::table('student_reminder_settings')->updateOrInsert(
+            ['user_id' => $request->user()->id],
+            ['minutes_before' => $data['minutes_before'] ?? null, 'updated_at' => now()]
+        );
+
+        return redirect()->route($data['return_to'] ?? 'notifications.settings')->with('status', 'Consultation reminder setting saved.');
     }
 
     private function endpoint(Request $request): string

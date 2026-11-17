@@ -150,6 +150,32 @@ with repeated external requests. Do **not** add an external cron workaround or
 public queue-runner URL. If consistent queued delivery, retries, scheduled
 reminders, or high-volume notifications are required, move to compatible hosting.
 
+## Student consultation reminders
+
+Students can choose 1–1,440 minutes before a confirmed consultation, or leave
+the field blank to disable reminders, under **Notifications → Notification
+settings**. The default is off. Each confirmed consultation gets at most one
+reminder, recorded in the inbox and sent through Web Push if the student enabled
+it on a device. Pending, cancelled, rejected, completed, and already-started
+consultations do not get reminders. If a scheduler run is delayed, a due
+reminder may be late; it is skipped entirely after the start time.
+
+Apply the latest migrations with `php artisan migrate`. If a host has phpMyAdmin
+but no Artisan access, after backing up the database, import
+`database/sql/consultation-reminders-schema.sql` as well as the existing
+notification schema. Neither script deletes records. The reminder migration
+recognizes tables created by that script.
+
+On compatible hosting, configure a real system scheduler to run
+`php artisan schedule:run` every minute from the project directory. Laravel then
+runs `consultations:send-reminders` every minute. Do not expose this command
+publicly. Use a persistent, shared cache for the scheduler's overlap lock.
+If `WEBPUSH_QUEUED=true`, a running queue worker is also required. Configure and
+test Web Push on each device; iPhone requires the installed Home Screen app.
+Push delivery is best-effort and may fail even when the reminder is in the inbox.
+The current InfinityFree free plan cannot run this scheduler; importing the
+tables alone will not make background reminders work there.
+
 On hosting with a real queue worker, set `WEBPUSH_QUEUED=true` and run Laravel's
 queue worker normally. The feature does not start one automatically. Event-driven
 delivery has no automatic retry loop; a temporary failure can mean a missed alert.

@@ -31,7 +31,7 @@ async function run() {
                 if (step === count) {
                     await Promise.all([
                         page.waitForResponse(response => response.url().endsWith('/tour/complete') && response.status() === 204),
-                        tour.getByRole('button', { name: 'Finish tour', exact: true }).click(),
+                        tour.getByRole('button', { name: 'Finish', exact: true }).click(),
                     ]);
                 } else await tour.getByRole('button', { name: 'Next', exact: true }).click();
             }
@@ -56,12 +56,9 @@ async function run() {
             await page.keyboard.press('Escape');
             assert.equal(await tour.isVisible(), false);
             assert.equal(await page.evaluate(() => document.documentElement.classList.contains('portal-tour-open')), false);
-            await page.getByRole('button', { name: 'Start navigation tour' }).click();
-            await tour.locator('[data-portal-tour-page]').click();
-            await page.waitForURL(url => role === 'teacher' ? url.pathname.endsWith('/teacher/profile') : url.pathname.endsWith('/dashboard'));
-            assert.equal(await tour.isVisible(), false);
+            assert.equal(await tour.locator('[data-portal-tour-page]').count(), 0);
             assert.deepEqual(errors, []);
-            console.log(`PASS ${role}: automatic onboarding, all ${count} steps, Next/Back/Finish, replay, Escape, page links, persistence, and 320–1440px light/dark layout`);
+            console.log(`PASS ${role}: automatic onboarding, all ${count} steps, Back/Next arrows/Finish, replay, Escape, persistence, and 320–1440px light/dark layout`);
             await context.close();
         }
     } finally { await browser.close(); }

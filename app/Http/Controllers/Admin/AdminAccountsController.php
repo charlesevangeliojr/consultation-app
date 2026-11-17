@@ -19,9 +19,11 @@ class AdminAccountsController extends Controller
         $filters = request()->validate([
             'search' => ['nullable', 'string', 'max:150'],
             'group' => ['nullable', \Illuminate\Validation\Rule::in(['all', 'admins', 'teachers', 'students', 'pending'])],
+            'per_page' => ['nullable', 'integer', \Illuminate\Validation\Rule::in([10, 15, 25, 50])],
         ]);
         $group = $filters['group'] ?? 'all';
         $search = trim($filters['search'] ?? '');
+        $perPage = (int) ($filters['per_page'] ?? 15);
         $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($search)).'%';
         AccountActivity::deactivateDormantStudents();
         $base = User::query()
@@ -47,9 +49,9 @@ class AdminAccountsController extends Controller
             })
             ->orderBy('name')
             ->orderBy('id')
-            ->paginate(15)->withQueryString();
+            ->paginate($perPage)->withQueryString();
 
-        return view('admin.accounts', compact('users', 'search', 'group', 'pendingCount'));
+        return view('admin.accounts', compact('users', 'search', 'group', 'pendingCount', 'perPage'));
     }
 
     public function create(): View

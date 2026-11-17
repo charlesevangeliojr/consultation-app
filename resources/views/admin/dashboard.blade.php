@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="dashboard-heading">
-        <div><p class="text-sm font-semibold uppercase tracking-[0.25em] text-rose-400">Overview</p><h2 class="mt-3 text-3xl font-bold sm:text-4xl">Welcome, {{ auth()->user()->name }}</h2><p class="mt-3 text-sm text-slate-400">A clear view of your school's consultation activity.</p></div>
+        <div><p class="text-xs font-semibold uppercase tracking-[0.25em] text-rose-400">Overview</p><h2 class="mt-1 text-2xl font-bold sm:mt-2 sm:text-3xl">Welcome, {{ auth()->user()->name }}</h2><p class="mt-1 hidden text-sm text-slate-400 sm:block">A clear view of your school's consultation activity.</p></div>
         <form method="GET" action="{{ route('admin.dashboard') }}" class="dashboard-filter">
             <label for="dashboard-month">Reporting month</label>
             <div><input type="month" id="dashboard-month" name="month" value="{{ $month->format('Y-m') }}" required><button type="submit">Apply</button></div>

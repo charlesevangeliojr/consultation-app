@@ -42,4 +42,31 @@ class AdminAccountRecordsTest extends TestCase
             ->assertSee('Grades &amp; sections', false)->assertSee('Academic setup')->assertSee('Configuration')
             ->assertDontSee('Academic lists')->assertDontSee('School setup');
     }
+
+    public function test_accounts_display_profile_pictures_and_pagination_controls(): void
+    {
+        $admin = User::factory()->superAdmin()->create(['name' => 'Admin User']);
+        $studentRole = Role::firstOrCreate(['name' => 'Student']);
+        $teacherRole = Role::firstOrCreate(['name' => 'Teacher']);
+
+        $student = User::factory()->create(['name' => 'Photo Student', 'role_id' => $studentRole->id]);
+        $student->student()->create(['profile_photo_path' => 'student-profiles/avatar.png']);
+
+        $teacher = User::factory()->create(['name' => 'Photo Teacher', 'role_id' => $teacherRole->id]);
+        $teacher->teacher()->create(['profile_photo_path' => 'teacher-profiles/avatar.png']);
+
+        $response = $this->actingAs($admin)->get(route('admin.accounts'))->assertOk();
+        $response->assertSee('student-profiles/avatar.png')
+            ->assertSee('teacher-profiles/avatar.png')
+            ->assertSee('Photo Student profile picture')
+            ->assertSee('Photo Teacher profile picture')
+            ->assertSee('Showing 1–3 of 3 · Page 1 of 1')
+            ->assertSee('Per page');
+
+        User::factory()->count(9)->create(['role_id' => $studentRole->id]);
+        $this->actingAs($admin)->get(route('admin.accounts', ['per_page' => 10]))->assertOk()
+            ->assertSee('Showing 1–10 of 12 · Page 1 of 2');
+        $this->actingAs($admin)->get(route('admin.accounts', ['per_page' => 10, 'page' => 2]))->assertOk()
+            ->assertSee('Showing 11–12 of 12 · Page 2 of 2');
+    }
 }

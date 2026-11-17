@@ -12,6 +12,7 @@ use Tests\TestCase;
 class NotificationInboxTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Concerns\CreatesCompleteTeacherProfiles;
 
     private function student(): User
     {
@@ -21,6 +22,32 @@ class NotificationInboxTest extends TestCase
     private function notice(User $user, string $body = 'Your consultation was updated.'): AccountNotification
     {
         return AccountNotification::create(['user_id' => $user->id, 'title' => 'Consultation update', 'body' => $body, 'url' => '/consultations/student/consultations']);
+    }
+
+    public function test_students_and_teachers_see_their_own_workspace_in_notification_pages(): void
+    {
+        $teacher = User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'Teacher'])->id]);
+        foreach ([[$this->student(), 'student-workspace', 'Student sidebar'], [$teacher, 'teacher-workspace', 'Teacher sidebar']] as [$user, $workspace, $sidebar]) {
+            foreach (['notifications.index', 'notifications.settings'] as $route) {
+                $this->actingAs($user)->get(route($route))->assertOk()
+                    ->assertSee('id="'.$workspace.'"', false)
+                    ->assertSee($sidebar)
+                    ->assertDontSee('admin-workspace');
+            }
+        }
+    }
+
+    public function test_notification_destinations_cannot_send_students_or_teachers_to_admin_pages(): void
+    {
+        $teacher = User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'Teacher'])->id]);
+        foreach ([$this->student(), $teacher] as $user) {
+            $notice = $this->notice($user);
+            $notice->update(['url' => '/admin/accounts']);
+            $this->actingAs($user)->post(route('notifications.read', $notice->id))->assertRedirect('/notifications');
+        }
+        $notice = $this->notice($teacher);
+        $notice->update(['url' => '/consultations/teacher/requests']);
+        $this->actingAs($teacher)->post(route('notifications.read', $notice->id))->assertRedirect('/consultations/teacher/requests');
     }
 
     public function test_inbox_badge_filters_and_read_actions_are_scoped_to_the_signed_in_user(): void
@@ -96,5 +123,39 @@ class NotificationInboxTest extends TestCase
         \Illuminate\Support\Facades\Schema::drop('account_notifications');
         $this->get(route('notifications.index'))->assertOk()->assertSee('Notification database setup is missing')->assertDontSee('SQLSTATE');
         $this->getJson(route('notifications.summary'))->assertOk()->assertJson(['unread' => 0]);
+    }
+
+    public function test_scheduling_permission_notifications_redirect_when_approved_and_hide_view_update_when_no_redirection(): void
+    {
+        $teacher = User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'Teacher'])->id]);
+        $teacher->teacher()->create(['consultation_approved' => false]);
+
+        $teacher->teacher->update(['consultation_approved' => true]);
+        $incompleteNotice = AccountNotification::where('user_id', $teacher->id)->latest('id')->first();
+        $this->assertSame('/consultations/teacher/profile', $incompleteNotice->url);
+        $this->actingAs($teacher)->get(route('notifications.index'))->assertOk()->assertSee('View update →');
+        $this->actingAs($teacher)->post(route('notifications.read', $incompleteNotice->id))->assertRedirect('/consultations/teacher/profile');
+
+        $teacher->teacher->delete();
+        $this->createCompleteTeacherProfile($teacher, ['consultation_approved' => false]);
+        $teacher->refresh();
+        $teacher->teacher->update(['consultation_approved' => true]);
+        $approvedNotice = AccountNotification::where('user_id', $teacher->id)->latest('id')->first();
+        $this->assertSame('/consultations/teacher/availability', $approvedNotice->url);
+        $this->actingAs($teacher)->post(route('notifications.read', $approvedNotice->id))->assertRedirect('/consultations/teacher/availability');
+        $this->actingAs($teacher)->post(route('notifications.read', $incompleteNotice->id))->assertRedirect('/consultations/teacher/availability');
+
+        $teacher->teacher->fresh()->update(['consultation_approved' => false]);
+        $revokedNotice = AccountNotification::where('user_id', $teacher->id)->latest('id')->first();
+        AccountNotification::where('user_id', $teacher->id)->where('id', '!=', $revokedNotice->id)->delete();
+        $this->assertSame('', $revokedNotice->url);
+        $this->actingAs($teacher)->get(route('notifications.index'))->assertOk()
+            ->assertDontSee('View update →')
+            ->assertSee('Mark as read');
+        $this->actingAs($teacher)->post(route('notifications.read', $revokedNotice->id))->assertRedirect('/notifications');
+        $this->assertNotNull($revokedNotice->fresh()->read_at);
+        $this->actingAs($teacher)->get(route('notifications.index'))->assertOk()
+            ->assertDontSee('View update →')
+            ->assertDontSee('Mark as read');
     }
 }

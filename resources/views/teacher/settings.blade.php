@@ -31,5 +31,17 @@
             <button type="submit" class="rounded-lg bg-rose-500 px-5 py-3 text-sm font-semibold hover:bg-rose-400">Save preferences</button>
         </form>
     </section>
-    <div class="max-w-3xl">@include('partials.notification-device-settings')</div>
+    <div class="max-w-3xl space-y-6">
+        @include('partials.notification-device-settings')
+        @include('partials.password-settings-card')
+        <section class="rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-6" aria-labelledby="teacher-quick-links-heading">
+            <h3 id="teacher-quick-links-heading" class="text-lg font-semibold">Account &amp; navigation guide</h3>
+            <p class="mt-2 text-xs leading-6 text-slate-400">Switch between dark and light themes from the top bar anytime, open your notification inbox, or replay the quick tour.</p>
+            <div class="mt-4 flex flex-wrap gap-3">
+                <a href="{{ route('notifications.index') }}" class="inline-flex min-h-11 items-center rounded-lg border border-slate-700 px-4 py-2.5 text-sm font-semibold hover:bg-slate-800">Notification inbox →</a>
+                <a href="{{ route('consultations.teacher-profile.edit') }}" class="inline-flex min-h-11 items-center rounded-lg border border-slate-700 px-4 py-2.5 text-sm font-semibold hover:bg-slate-800">Edit profile →</a>
+                <button type="button" data-portal-tour-start class="min-h-11 rounded-lg border border-slate-700 px-4 py-2.5 text-sm font-semibold hover:bg-slate-800">Replay quick tour</button>
+            </div>
+        </section>
+    </div>
 @endsection

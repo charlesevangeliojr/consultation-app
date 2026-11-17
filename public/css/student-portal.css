@@ -64,8 +64,10 @@
 .student-booking-duration[data-invalid="true"] { color: #fda4af; }
 .student-range-form :where(input, textarea, button):focus-visible { outline: 2px solid #fb7185; outline-offset: 2px; }
 @media (max-width: 639px) {
+    .student-page-heading { gap: 12px; padding-bottom: 16px; }
+    .student-page-heading > div > p:last-child { margin-top: 4px; font-size: 13px; line-height: 1.5; }
     /* Match the teacher dashboard's compact three-card mobile summary. */
-    .student-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 24px; }
+    .student-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
     .student-stat { display: block; padding: 12px 8px; border-color: #1e293b; border-radius: 12px; background: #0f172a; box-shadow: none; }
     .student-stat-icon { display: none; }
     .student-stat dt { font-size: 11px; line-height: 16px; }

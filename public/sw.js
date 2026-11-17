@@ -37,11 +37,16 @@ self.addEventListener('notificationclick', event => {
     const allowed = ['/consultations', '/consultations/teacher/requests', '/consultations/student/consultations', '/consultations/teacher/profile', '/admin', '/admin/accounts'];
     const path = allowed.includes(event.notification.data?.url) ? event.notification.data.url : '/consultations';
     const url = new URL(path, self.location.origin).href;
+    const adminTarget = path === '/admin' || path.startsWith('/admin/');
     event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async windows => {
         for (const client of windows) {
-            if (new URL(client.url).origin !== self.location.origin) continue;
-            if ('navigate' in client) await client.navigate(url);
-            return client.focus();
+            const current = new URL(client.url);
+            if (current.origin !== self.location.origin) continue;
+            const adminWindow = current.pathname === '/admin' || current.pathname.startsWith('/admin/');
+            const portalWindow = current.pathname === '/consultations' || current.pathname.startsWith('/consultations/');
+            if (!(adminTarget ? adminWindow : portalWindow) || !('navigate' in client)) continue;
+            const navigated = await client.navigate(url);
+            if (navigated) return navigated.focus();
         }
         return self.clients.openWindow(url);
     }));

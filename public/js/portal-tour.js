@@ -5,20 +5,37 @@
     let index = 0;
     let timer;
     let returnFocus;
+    const nextArrow = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+    const detectMode = () => (window.innerWidth < 1024 ? 'mobile' : 'desktop');
     const dialog = () => document.querySelector('[data-portal-tour]');
     const steps = modal => JSON.parse(modal.querySelector('[data-portal-tour-steps]').textContent);
     function render(modal) {
         const items = steps(modal);
         const step = items[index];
+        const mode = detectMode();
         modal.querySelector('[data-portal-tour-progress]').textContent = `Step ${index + 1} of ${items.length}`;
+        const image = modal.querySelector('[data-portal-tour-image]');
+        if (image) {
+            const src = mode === 'mobile' ? (step.mobileImage || step.desktopImage) : (step.desktopImage || step.mobileImage);
+            if (src) image.src = src;
+            image.dataset.mode = mode;
+            image.alt = step.imageAlt ? `${step.imageAlt} (${mode} view)` : `${step.title} (${mode} view)`;
+        }
         modal.querySelector('[data-portal-tour-title]').textContent = step.title;
         modal.querySelector('[data-portal-tour-text]').textContent = step.text;
         modal.querySelector('[data-portal-tour-location]').textContent = step.navigation;
-        const link = modal.querySelector('[data-portal-tour-page]');
-        link.href = step.url;
-        link.textContent = `${step.action} →`;
         modal.querySelector('[data-portal-tour-back]').disabled = index === 0;
-        modal.querySelector('[data-portal-tour-next]').textContent = index === items.length - 1 ? 'Finish tour' : 'Next';
+        const nextBtn = modal.querySelector('[data-portal-tour-next]');
+        const isLast = index === items.length - 1;
+        if (isLast) {
+            nextBtn.textContent = 'Finish';
+            nextBtn.setAttribute('aria-label', 'Finish');
+            nextBtn.classList.remove('portal-tour-arrow');
+        } else {
+            nextBtn.innerHTML = nextArrow;
+            nextBtn.setAttribute('aria-label', 'Next');
+            nextBtn.classList.add('portal-tour-arrow');
+        }
     }
     function finish(modal) {
         remembered.add(modal.dataset.tourKey);
@@ -56,7 +73,7 @@
         if (!modal) return;
         if (event.target.closest('[data-portal-tour-start]')) open(modal);
         if (!modal.open) return;
-        if (event.target.closest('[data-portal-tour-skip], [data-portal-tour-page]')) finish(modal);
+        if (event.target.closest('[data-portal-tour-skip]')) finish(modal);
         if (event.target.closest('[data-portal-tour-next]')) {
             if (index === steps(modal).length - 1) finish(modal);
             else { index++; render(modal); }
@@ -81,6 +98,10 @@
         if (dialog()?.open) dialog().close();
         clearTimeout(timer);
         document.documentElement.classList.remove('portal-tour-open');
+    });
+    window.addEventListener('resize', () => {
+        const modal = dialog();
+        if (modal?.open) render(modal);
     });
     if (document.readyState !== 'loading') suggest();
 })();
